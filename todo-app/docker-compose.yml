@@ -20,19 +20,25 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/todo:/app
+      - /todo/node_modules
     ports:
       - "3000:3000"
     environment:
       - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true  # この行を追加
+      - WDS_SOCKET_PORT=0  # この行を追加
+      - FAST_REFRESH=false 
     tty: true
+    
 
   db:
     image: mysql:8.0
     environment:
       MYSQL_DATABASE: todo_app
       MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "3306:3306"
     volumes:
       - dbdata:/var/lib/mysql
 
