@@ -8,7 +8,7 @@ const TodoForm = ({ fetchTodos }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/todos', { title, description });
+      await axios.post('/api/todos', { title, description });
       setTitle('');
       setDescription('');
       fetchTodos();
