@@ -20,17 +20,13 @@ const TodoForm = ({ fetchTodos }) => {
   };
 
   return (
-    // <form onSubmit={handleSubmit}>
+    <>
+    <form onSubmit={handleSubmit}>
       <Card>
-        <CardHeader title="test">
+        <CardHeader title="test"></CardHeader>
           <CardContent>
             <List>
-              {[0, 1, 2, 3].map((value) => {
-                return <p>{value}</p>
-              })}
-            </List>
-
-            {/* <div>
+              
         <label>タイトル:</label>
         <input
           type="text"
@@ -38,19 +34,20 @@ const TodoForm = ({ fetchTodos }) => {
           onChange={(e) => setTitle(e.target.value)}
           required
         />
-      </div>
       <div>
         <label>説明:</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         ></textarea>
-      </div> */}
-            {/* <button type="submit">追加</button> */}
+      </div>
+            </List>
+
+            <button type="submit">追加</button>
         </CardContent>
-      </CardHeader>
     </Card>
-    // </form>
+    </form>
+    </>
   );
 };
 

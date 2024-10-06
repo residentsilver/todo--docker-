@@ -1,8 +1,9 @@
+ // データの取得
 import { useQuery, useQueryClient } from 'react-query';
 import axios from 'axios';
 
 const getToDoList = async () => {
-    const { data } = await axios.get('/api/todo'); // データの取得
+    const { data } = await axios.get('/api/todos');
     return data;
 }
 

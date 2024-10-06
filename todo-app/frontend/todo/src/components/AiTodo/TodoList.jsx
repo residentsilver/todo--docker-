@@ -8,7 +8,7 @@ const TodoList = () => {
 
   const fetchTodos = async () => {
     try {
-      const response = await axios.get('/todos');
+      const response = await axios.get('/api/todos');
       setTodos(response.data);
     } catch (error) {
       console.error('Todoの取得に失敗しました。', error);

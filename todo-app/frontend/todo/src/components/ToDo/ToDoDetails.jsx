@@ -1,7 +1,5 @@
-import { ListItemButton, ListItem, IconButton, ListItemText } from '@mui/material';
+import { ListItemButton, ListItem, IconButton, ListItemText, Checkbox, ListItemIcon } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import Checkbox from '@mui/material/Checkbox';
-import ListItemIcon from '@mui/material/ListItemIcon';
 
 const ToDoDetails = (props) => {
     return (
@@ -17,6 +15,9 @@ const ToDoDetails = (props) => {
                 <ListItemIcon>
                     <Checkbox
                         edge="start"
+                        checked={props.completed}
+                        tabIndex={-1}
+                        disableRipple
                     />
                 </ListItemIcon>
                 <ListItemText primary={props.title} secondary={props.description} />
