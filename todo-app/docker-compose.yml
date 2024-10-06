@@ -36,11 +36,13 @@ services:
     image: mysql:8.0
     environment:
       MYSQL_DATABASE: todo_app
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
       MYSQL_ROOT_PASSWORD: secret
+      TZ: 'Asia/Tokyo'
     ports:
-      - "3306:3306"
+      - "3006:3306"
     volumes:
-      - dbdata:/var/lib/mysql
-
-volumes:
-  dbdata:
+    - ./docker/db/data:/var/lib/mysql
+    - ./docker/db/my.cnf:/etc/mysql/conf.d/my.cnf
+    - ./docker/db/sql:/docker-entrypoint-initdb.d

@@ -16,7 +16,9 @@ class Todo extends Model
      */
     protected $fillable = [
         'title',
-        'description',
-        'completed',
     ];
+
+    public function todoDetails(){
+        return $this->hasMany(TodoDetail::class);
+    }
 }

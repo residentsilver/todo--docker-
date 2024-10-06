@@ -3,40 +3,45 @@
 namespace App\Http\Controllers;
 
 use App\Models\Todo;
+use App\Models\TodoDetail;
 use Illuminate\Http\Request;
+use App\Http\Requests\ToDo\StoreRequest;
+use App\Http\Requests\ToDoDetails\StoreRequest as TodoDetailStoreRequest;
 
 class TodoController extends Controller
 {
     /**
-     * 更新されたTodoアイテムのリストを取得します。
+     * Todoアイテムの一覧を取得します。
      *
      * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        $todos = Todo::all();
+        $todos = Todo::with('todoDetails')->get();
         return response()->json($todos);
     }
 
     /**
      * 新しいTodoアイテムを作成します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\StoreRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(StoreRequest $request)
     {
-        // バリデーションルールの定義
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'completed' => 'boolean',
-        ]);
-
         // Todoアイテムの作成
+        $validatedData = $request->validated();
         $todo = Todo::create($validatedData);
 
-        return response()->json($todo, 201);
+        // Todo詳細の作成
+        if ($request->has('description')) {
+            $todo->todoDetails()->create([
+                'description' => $request->input('description'),
+                'completed' => false,
+            ]);
+        }
+
+        return response()->json($todo->load('todoDetails'), 201);
     }
 
     /**
@@ -47,13 +52,11 @@ class TodoController extends Controller
      */
     public function show(Todo $todo)
     {
-        return response()->json($todo);
+        return response()->json($todo->load('todoDetails'));
     }
 
     /**
      * 指定されたTodoアイテムを更新します。
-     * 
-     * 完了状態を切り替える機能を追加しています。
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Todo  $todo
@@ -61,31 +64,26 @@ class TodoController extends Controller
      */
     public function update(Request $request, Todo $todo)
     {
-        // バリデーションルールの定義
+        // Todoの更新
         $validatedData = $request->validate([
             'title' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'completed' => 'sometimes|boolean',
         ]);
 
-        // 完了状態を切り替える
-        if ($request->has('completed')) {
-            $todo->completed = $request->input('completed');
+        $todo->update($validatedData);
+
+        // Todo詳細の更新
+        if ($request->has('description') || $request->has('completed')) {
+            $detail = $todo->todoDetails()->firstOrCreate([]);
+            if ($request->has('description')) {
+                $detail->description = $request->input('description');
+            }
+            if ($request->has('completed')) {
+                $detail->completed = $request->input('completed');
+            }
+            $detail->save();
         }
 
-        // その他のフィールドを更新
-        if ($request->has('title')) {
-            $todo->title = $request->input('title');
-        }
-
-        if ($request->has('description')) {
-            $todo->description = $request->input('description');
-        }
-
-        // 変更を保存
-        $todo->save();
-
-        return response()->json($todo);
+        return response()->json($todo->load('todoDetails'));
     }
 
     /**
