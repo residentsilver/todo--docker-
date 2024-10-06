@@ -4,7 +4,7 @@ import axios from 'axios';
 const TodoItem = ({ todo, fetchTodos }) => {
   const toggleCompleted = async () => {
     try {
-      await axios.put(`/todos/${todo.id}`, {
+      await axios.put(`/api/todos/${todo.id}`, {
         completed: !todo.completed,
       });
       fetchTodos();
@@ -15,7 +15,7 @@ const TodoItem = ({ todo, fetchTodos }) => {
 
   const deleteTodo = async () => {
     try {
-      await axios.delete(`/todos/${todo.id}`);
+      await axios.delete(`/api/todos/${todo.id}`);
       fetchTodos();
     } catch (error) {
       console.error('Todoを削除できませんでした。', error);

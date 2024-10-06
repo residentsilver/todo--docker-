@@ -1,14 +1,19 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
+import './App.css';
+import App from './pages/App';
 import reportWebVitals from './reportWebVitals';
-
+import Menu from './components/menu';
+import { Box } from '@mui/material';
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
 root.render(
-  <React.StrictMode>
+  <Box>
+    <Menu/>
+    <React.StrictMode>
     <App />
   </React.StrictMode>
+  </Box>
 );
 
 // If you want to start measuring performance in your app, pass a function
