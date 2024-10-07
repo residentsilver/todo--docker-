@@ -32,6 +32,7 @@ const Form = (props) => {
         setTimer(newTimer);
     }
 
+
     return (
         <>
             <Card>
@@ -44,12 +45,12 @@ const Form = (props) => {
                 />
                 {/* props （引数＝DBから得た情報　todosテーブルのtitleカラム） */}
                 <CardContent>
-                    <List>
+                <List>
                         {props.toDo.todo_details.map((detail) => {
                             return (
                                 <ToDoDetails
                                     key={detail.id}
-                                    title={detail.title}
+                                    id={detail.id}
                                     description={detail.description}
                                 />
                             );
