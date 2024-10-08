@@ -52,6 +52,7 @@ const Form = (props) => {
                                     key={detail.id}
                                     id={detail.id}
                                     description={detail.description}
+                                    completed ={detail.completed}
                                 />
                             );
                         })}

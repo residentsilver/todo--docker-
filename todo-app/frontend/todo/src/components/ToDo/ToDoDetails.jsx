@@ -1,14 +1,16 @@
 import { ListItemButton, ListItem, IconButton, Checkbox, ListItemIcon, TextField } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { useUpdateToDoDetailMutateTask } from '../hooks/ToDoDetail';
-import React, { useState } from 'react';
+import React, { useState ,useEffect } from 'react';
 
 const ToDoDetails = (props) => {
     const [timer, setTimer] = useState(null);
+    const [isCompleted, setIsCompleted] = useState(props.completed);
 
     let ToDoDetail = {
         id: props.id,
         description: props.description,
+        completed: props.completed,
     };
 
     const { updateToDoDetailMutation } = useUpdateToDoDetailMutateTask();
@@ -25,7 +27,24 @@ const ToDoDetails = (props) => {
 
         setTimer(newTimer);
     }
+
+    const eventCheckToDoDetail = (event) => {
+        const newCompleted = event.target.checked;
+        setIsCompleted(newCompleted);
+        
+        let data = {
+            ...ToDoDetail,
+            completed: newCompleted,
+        }
+        updateToDoDetailMutation.mutate(data);
+    }
+
+        
+    useEffect(() => {
+        setIsCompleted(props.completed);
+    }, [props.completed]);
     
+    console.log(props);
     return (
         <ListItem
             key={props.id}
@@ -39,9 +58,10 @@ const ToDoDetails = (props) => {
                 <ListItemIcon>
                     <Checkbox
                         edge="start"
-                        checked={props.completed}
+                        checked={isCompleted}
                         tabIndex={-1}
-                        disableRipple
+                        onChange={eventCheckToDoDetail}
+                        // disableRipple
                     />
                 </ListItemIcon>
                 <TextField
