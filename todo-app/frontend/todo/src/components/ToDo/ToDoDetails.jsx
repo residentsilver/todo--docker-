@@ -11,6 +11,7 @@ const ToDoDetails = (props) => {
         id: props.id,
         description: props.description,
         completed: props.completed,
+        to_do_id:props.to_do_id
     };
 
     const { updateToDoDetailMutation } = useUpdateToDoDetailMutateTask();

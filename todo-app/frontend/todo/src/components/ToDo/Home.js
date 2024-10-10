@@ -1,8 +1,8 @@
-import { Grid2 } from '@mui/material';
+import { Grid } from '@mui/material';
 import React from 'react';
 import Form from './Form';
 import { useCurrentToDoList, useGetToDoList } from '../hooks/ToDoList';
-
+import { ReactQueryDevtools} from "react-query/devtools";
 function Home() {
     const { isLoading } = useGetToDoList();
     const toDoList = useCurrentToDoList();
@@ -10,14 +10,15 @@ function Home() {
 
     return (
         <>
-            <Grid2 container spacing={2}>
+            <Grid container spacing={2}>
                 {toDoList.map((toDo) => (
-                    <Grid2 item key = {toDo.id} xs={8}>
+                    <Grid item key = {toDo.id} xs={8}>
                         <Form toDo={toDo}/>
                         {/* コンポーネントの指定　引数名　 mapで渡された変数*/}
-                    </Grid2>
+                    </Grid>
                 ))}
-            </Grid2>
+            </Grid>
+            <ReactQueryDevtools></ReactQueryDevtools>
         </>
     );
 }
