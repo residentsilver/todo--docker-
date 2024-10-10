@@ -1,15 +1,15 @@
 import React, { Suspense, lazy } from 'react';
 import '../App.css';
-import List from '../components/List';
-// const TodoList = lazy(() => import('../components/TodoList'));
+import Home from '../components/ToDo/Home';
+import { Route } from 'react-router-dom';
 
 function App() {
   return (
     <div className="App">
-      <Suspense fallback={<div>読み込み中...</div>}>
+      {/* <Suspense fallback={<div>読み込み中...</div>}> */}
         {/* <TodoList /> */}
-        <List />
-      </Suspense>
+        <Home />
+      {/* </Suspense> */}
     </div>
   );
 }

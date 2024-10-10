@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./backend:/var/www/html
+      - /var/www/html/storage/framework
+      - /var/www/html/vendor
     ports:
       - "8000:80"
     depends_on:
@@ -14,6 +16,8 @@ services:
       - DB_DATABASE=todo_app
       - DB_USERNAME=root
       - DB_PASSWORD=secret
+    command: php artisan serve --host=0.0.0.0 --port=80
+
 
   frontend:
     build:
@@ -21,15 +25,16 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./frontend/todo:/app
-      - /todo/node_modules
+      - /app/node_modules
     ports:
       - "3000:3000"
     environment:
       - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true  # この行を追加
-      - WDS_SOCKET_PORT=0  # この行を追加
+      - WATCHPACK_POLLING=true
+      - WDS_SOCKET_PORT=0
       - FAST_REFRESH=false 
     tty: true
+    command: sh -c 'npm start'
     
 
   db:
