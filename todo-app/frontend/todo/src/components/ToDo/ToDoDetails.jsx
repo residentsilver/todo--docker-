@@ -1,6 +1,6 @@
 import { ListItemButton, ListItem, IconButton, Checkbox, ListItemIcon, TextField } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useDeleteToDoDetailMutateTask, useUpdateToDoDetailMutateTask } from '../hooks/ToDoDetail';
+import { useDeleteToDoDetailMutateTask , useUpdateToDoDetailMutateTask } from '../hooks/ToDoDetail';
 import React, { useState, useEffect } from 'react';
 
 const ToDoDetails = (props) => {
@@ -44,7 +44,7 @@ const ToDoDetails = (props) => {
 
     //削除イベント
     const { deleteToDoDetailMutation } = useDeleteToDoDetailMutateTask();
-    const eventDeleteToDoDettail = (event) => {
+    const eventDeleteToDoDetail = (event) => {
         deleteToDoDetailMutation.mutate(ToDoDetail);
     }
 
@@ -52,17 +52,23 @@ const ToDoDetails = (props) => {
         setIsCompleted(props.completed);
     }, [props.completed]);
 
+    useEffect(() => {
     console.log(props);
+    }, []);
+    
     return (
+
         <ListItem
             key={props.id}
             secondaryAction={
-                <IconButton
-                    edge="end"
-                    aria-label="delete"
-                    onClick={eventDeleteToDoDettail}>
-                    <DeleteIcon />
-                </IconButton>
+                <>
+                    <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={eventDeleteToDoDetail}>
+                        <DeleteIcon />
+                    </IconButton>
+                </>
             }
         >
             <ListItemButton>
@@ -72,7 +78,6 @@ const ToDoDetails = (props) => {
                         checked={isCompleted}
                         tabIndex={-1}
                         onChange={eventCheckToDoDetail}
-                    // disableRipple
                     />
                 </ListItemIcon>
                 <TextField
@@ -82,10 +87,8 @@ const ToDoDetails = (props) => {
                     fullWidth
                     onChange={eventUpdateToDoDetail}
                 />
-                {/* <ListItemText primary={props.title} secondary={props.description} /> */}
             </ListItemButton>
         </ListItem>
-
     );
 }
 

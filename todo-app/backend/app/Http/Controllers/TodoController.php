@@ -34,12 +34,10 @@ class TodoController extends Controller
         $todo = Todo::create($validatedData);
 
         // Todo詳細の作成
-        if ($request->has('description')) {
-            $todo->todoDetails()->create([
-                'description' => $request->input('description'),
-                'completed' => false,
-            ]);
-        }
+        $todo->todoDetails()->create([
+            'description' => $request->input('description'),
+            'completed' => false,
+        ]);
 
         return response()->json($todo->load('todoDetails'), 201);
     }
