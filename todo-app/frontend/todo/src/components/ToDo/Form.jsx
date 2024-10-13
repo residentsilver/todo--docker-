@@ -1,7 +1,16 @@
-import { Card, CardHeader, CardContent, List, TextField } from '@mui/material';
+import { 
+    Card, 
+    CardContent, 
+    List, 
+    TextField, 
+    CardActions, 
+    IconButton 
+} from '@mui/material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import React, { useState } from 'react';
 import ToDoDetails from './ToDoDetails';
 import { useUpdateToDoMutateTask } from '../hooks/ToDo';
+import { useDeleteToDoMutateTask } from '../hooks/ToDo';
 
 /**
  * Todoフォームコンポーネント
@@ -17,6 +26,7 @@ const Form = (props) => {
         title: props.toDo.title,
     };
 
+    //名称更新イベント
     const { updateToDoMutation } = useUpdateToDoMutateTask();
     const eventUpdateToDo = (event) => {
         clearTimeout(timer);
@@ -32,6 +42,11 @@ const Form = (props) => {
         setTimer(newTimer);
     }
 
+    //削除イベント
+    const { deleteToDoMutation } = useDeleteToDoMutateTask();
+    const eventDeleteToDo = (event) => {
+        deleteToDoMutation.mutate(ToDo);
+    }
 
     return (
         <>
@@ -45,19 +60,27 @@ const Form = (props) => {
                 />
                 {/* props （引数＝DBから得た情報　todosテーブルのtitleカラム） */}
                 <CardContent>
-                <List>
+                    <List>
                         {props.toDo.todo_details.map((detail) => {
                             return (
                                 <ToDoDetails
                                     key={detail.id}
                                     id={detail.id}
                                     description={detail.description}
-                                    completed ={detail.completed}
+                                    completed={detail.completed}
                                 />
                             );
                         })}
                     </List>
                 </CardContent>
+                <CardActions>
+                    <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={eventDeleteToDo}>
+                        <DeleteIcon />
+                    </IconButton>
+                </CardActions>
             </Card>
         </>
     );
