@@ -1,16 +1,21 @@
-import { 
-    Card, 
-    CardContent, 
-    List, 
-    TextField, 
-    CardActions, 
-    IconButton 
+import {
+    Card,
+    CardContent,
+    List,
+    TextField,
+    CardActions,
+    IconButton,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/AddCircle';
 import React, { useState } from 'react';
 import ToDoDetails from './ToDoDetails';
-import { useUpdateToDoMutateTask } from '../hooks/ToDo';
-import { useDeleteToDoMutateTask } from '../hooks/ToDo';
+import {
+    useUpdateToDoMutateTask,
+    useDeleteToDoMutateTask
+}
+    from '../hooks/ToDo';
+import { useStoreToDoDetailMutateTask } from '../hooks/ToDoDetail';
 
 /**
  * Todoフォームコンポーネント
@@ -25,6 +30,10 @@ const Form = (props) => {
         id: props.toDo.id,
         title: props.toDo.title,
     };
+
+    let toDo ={
+        id: props.toDo.id,
+    }
 
     //名称更新イベント
     const { updateToDoMutation } = useUpdateToDoMutateTask();
@@ -46,6 +55,12 @@ const Form = (props) => {
     const { deleteToDoMutation } = useDeleteToDoMutateTask();
     const eventDeleteToDo = (event) => {
         deleteToDoMutation.mutate(ToDo);
+    }
+
+    //追加イベント
+    const { storeToDoDetailMutation } = useStoreToDoDetailMutateTask();
+    const eventStoreToDoDetail = (event) => {
+        storeToDoDetailMutation.mutate(toDo);
     }
 
     return (
@@ -74,6 +89,13 @@ const Form = (props) => {
                     </List>
                 </CardContent>
                 <CardActions>
+                <IconButton
+                        edge="start"
+                        aria-label="add"
+                        color="primary"
+                        onClick={eventStoreToDoDetail}>
+                        <AddIcon />
+                    </IconButton>
                     <IconButton
                         edge="end"
                         aria-label="delete"
