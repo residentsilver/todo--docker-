@@ -46,6 +46,7 @@ const SortableToDoDetails = (props) => {
                 to_do_id={props.to_do_id}
                 setDetails={props.setDetails}
                 details={props.details}
+                onAddNewDetail={props.onAddNewDetail}
             />
         </div>
     );

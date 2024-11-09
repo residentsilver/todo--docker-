@@ -50,7 +50,7 @@ const ToDoDetails = (props) => {
                 const currentIndex = props.details.findIndex(
                     detail => detail.id === props.id
                 );
-    
+        
                 if (event.shiftKey) {
                     // Shift + Enterの場合、前の要素へ移動
                     if (currentIndex > 0) {
@@ -62,14 +62,18 @@ const ToDoDetails = (props) => {
                         }
                     }
                 } else {
-                    // 通常のEnterの場合、次の要素へ移動
+                    // 通常のEnterの場合
                     if (currentIndex < props.details.length - 1) {
+                        // 次の要素が存在する場合は次へ移動
                         const nextElement = document.querySelector(
                             `input[data-detail-id="${props.details[currentIndex + 1].id}"]`
                         );
                         if (nextElement) {
                             nextElement.focus();
                         }
+                    } else {
+                        // 最後の要素の場合は新しい項目を追加
+                        props.onAddNewDetail();
                     }
                 }
             }

@@ -158,6 +158,7 @@ const Form = (props) => {
                                         to_do_id={detail.to_do_id}
                                         setDetails={setDetails}
                                         details={details}
+                                        onAddNewDetail={eventStoreToDoDetail}
                                     />
                                 ))}
                             </List>
