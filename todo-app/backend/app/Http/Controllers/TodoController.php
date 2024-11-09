@@ -17,7 +17,9 @@ class TodoController extends Controller
      */
     public function index()
     {
-        $todos = Todo::with('todoDetails')->get();
+        $todos = Todo::with(['todoDetails' => function($query) {
+            $query->orderBy('order');
+        }])->get();
         return response()->json($todos);
     }
 
@@ -32,16 +34,17 @@ class TodoController extends Controller
         // Todoアイテムの作成
         $validatedData = $request->validated();
         $todo = Todo::create($validatedData);
+        $maxOrder = $todo->todoDetails()->max('order') ?? 0;
 
         // Todo詳細の作成
         $todo->todoDetails()->create([
             'description' => $request->input('description'),
             'completed' => false,
+            'order' => $maxOrder + 1,
         ]);
 
         return response()->json($todo->load('todoDetails'), 201);
     }
-
     /**
      * 指定されたTodoアイテムを表示します。
      *

@@ -9,7 +9,7 @@ use App\Http\Controllers\ToDoDetailController;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
-Route::put('/todos/{todo}/details/order', [TodoDetailController::class, 'updateOrder']);
+Route::put('/todoDetails/{todo}/order', [TodoDetailController::class, 'updateOrder']);
 Route::resource('todos', TodoController::class);
 Route::resource('tododetails', ToDoDetailController::class);
 

@@ -42,6 +42,39 @@ const ToDoDetails = (props) => {
         updateToDoDetailMutation.mutate(data);
     }
 
+        //テキストフィールドのキーダウンイベント
+        const eventKeyDownToDoDetail = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                // 現在のdetailのインデックスを取得
+                const currentIndex = props.details.findIndex(
+                    detail => detail.id === props.id
+                );
+    
+                if (event.shiftKey) {
+                    // Shift + Enterの場合、前の要素へ移動
+                    if (currentIndex > 0) {
+                        const prevElement = document.querySelector(
+                            `input[data-detail-id="${props.details[currentIndex - 1].id}"]`
+                        );
+                        if (prevElement) {
+                            prevElement.focus();
+                        }
+                    }
+                } else {
+                    // 通常のEnterの場合、次の要素へ移動
+                    if (currentIndex < props.details.length - 1) {
+                        const nextElement = document.querySelector(
+                            `input[data-detail-id="${props.details[currentIndex + 1].id}"]`
+                        );
+                        if (nextElement) {
+                            nextElement.focus();
+                        }
+                    }
+                }
+            }
+        };
+
     //削除イベント
     const { deleteToDoDetailMutation } = useDeleteToDoDetailMutateTask();
     const eventDeleteToDoDetail = (event) => {
@@ -71,7 +104,7 @@ const ToDoDetails = (props) => {
                 </>
             }
         >
-            <ListItemButton>
+            <ListItemButton disableRipple>
                 <ListItemIcon>
                     <Checkbox
                         edge="start"
@@ -86,6 +119,10 @@ const ToDoDetails = (props) => {
                     defaultValue={props.description}
                     fullWidth
                     onChange={eventUpdateToDoDetail}
+                    onKeyDown={eventKeyDownToDoDetail}
+                    inputProps={{
+                        'data-detail-id': props.id
+                    }}
                 />
             </ListItemButton>
         </ListItem>

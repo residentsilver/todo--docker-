@@ -4,6 +4,8 @@ import Form from './Form';
 import { useCurrentToDoList, useGetToDoList } from '../hooks/ToDoList';
 import useStoreToDoMutateTask from '../hooks/ToDo/useStoreToDoMutateTask';
 import AddIcon from '@mui/icons-material/AddCircle';
+// import { ReactQueryDevtools} from "react-query/devtools";
+
 
 function Home() {
     const { isLoading } = useGetToDoList();
@@ -27,7 +29,6 @@ function Home() {
 
         const ToDo = {
             title: newToDo,
-            description: "初期説明", // 必要に応じてユーザー入力を追加
         };
 
         storeToDoMutation.mutate(ToDo, {
@@ -42,6 +43,13 @@ function Home() {
     };
 
     if (isLoading) return <div>Loading...</div>;
+
+    const eventKeyDownNewToDo = (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            eventStoreToDo();
+        }
+    };
 
     return (
         <>
@@ -68,6 +76,7 @@ function Home() {
                     variant="outlined"
                     value={newToDo}
                     onChange={(e) => setNewToDo(e.target.value)}
+                    onKeyDown={eventKeyDownNewToDo}
                     sx={{ marginTop: 4, width: '300px' }}
                 />
 
@@ -80,6 +89,8 @@ function Home() {
                     <AddIcon />
                 </Fab>
             </Box>
+            {/* <ReactQueryDevtools></ReactQueryDevtools> */}
+
         </>
     );
 }

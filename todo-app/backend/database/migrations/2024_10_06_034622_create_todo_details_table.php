@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('todo_id')->constrained('todos')->onDelete('cascade');
             $table->text('description')->nullable();
+            $table->integer('order')->nullable();
             $table->boolean('completed')->default(false);
             $table->timestamps();
             });

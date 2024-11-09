@@ -14,8 +14,13 @@ class TodoDetail extends Model
         'todo_id',
         'description',
         'completed',
+        'order'
     ];
 
+    protected $casts = [
+        'completed' => 'boolean',
+    ];
+    
     public function Todo(){
         return $this->belongsTo(Todo::class);
     }
