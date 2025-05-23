@@ -10,9 +10,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Todoモデルクラス
  * 
  * @description Todoアイテムを管理するEloquentモデル
- *              ソフトデリート機能を提供
+ *              ソフトデリート機能と順序管理機能を提供
  * @author システム開発者
- * @version 1.1
+ * @version 1.2
  */
 class Todo extends Model
 {
@@ -25,6 +25,7 @@ class Todo extends Model
      */
     protected $fillable = [
         'title',
+        'order',
     ];
 
     /**
@@ -35,6 +36,23 @@ class Todo extends Model
     protected $dates = ['deleted_at'];
 
     /**
+     * デフォルトの並び順を設定
+     *
+     * @return void
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // 新しいTodoが作成される際に、自動的に最大のorder値+1を設定
+        static::creating(function ($todo) {
+            if (is_null($todo->order)) {
+                $todo->order = static::max('order') + 1;
+            }
+        });
+    }
+
+    /**
      * TodoDetailとの1対多のリレーションシップ
      * 
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -42,5 +60,16 @@ class Todo extends Model
     public function todoDetails()
     {
         return $this->hasMany(TodoDetail::class);
+    }
+
+    /**
+     * デフォルトのクエリスコープ：order順で並び替え
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeOrdered($query)
+    {
+        return $query->orderBy('order');
     }
 }

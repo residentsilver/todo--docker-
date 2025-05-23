@@ -10,6 +10,7 @@ use App\Http\Controllers\ToDoDetailController;
 // })->middleware('auth:sanctum');
 
 // Todo関連のルート
+Route::put('/todos/order', [TodoController::class, 'updateOrder']);
 Route::put('/todoDetails/{todo}/order', [TodoDetailController::class, 'updateOrder']);
 Route::resource('todos', TodoController::class);
 Route::resource('tododetails', ToDoDetailController::class);

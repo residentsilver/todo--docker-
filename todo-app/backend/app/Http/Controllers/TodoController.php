@@ -25,7 +25,7 @@ class TodoController extends Controller
      */
     public function index()
     {
-        $todos = Todo::with(['todoDetails' => function($query) {
+        $todos = Todo::ordered()->with(['todoDetails' => function($query) {
             $query->orderBy('order');
         }])->get();
         return response()->json($todos);
@@ -229,5 +229,122 @@ class TodoController extends Controller
     {
         $todo->delete();
         return response()->json(null, 204);
+    }
+
+    /**
+     * Todoアイテムの順序を更新します。
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function updateOrder(Request $request)
+    {
+        try {
+            // リクエストデータをログに記録
+            \Log::info('Todo順序更新リクエスト開始', [
+                'request_data' => $request->all(),
+                'content_type' => $request->header('Content-Type'),
+                'method' => $request->method()
+            ]);
+
+            // フロントエンドからの形式に対応（orderまたはtodos）
+            $requestData = $request->all();
+            $todosData = [];
+
+            if (isset($requestData['order']) && is_array($requestData['order'])) {
+                // フロントエンドから order: [id1, id2, id3] 形式で送信された場合
+                \Log::info('order形式のデータを検出', ['order' => $requestData['order']]);
+                
+                foreach ($requestData['order'] as $index => $todoId) {
+                    $todosData[] = [
+                        'id' => $todoId,
+                        'order' => $index + 1
+                    ];
+                }
+            } elseif (isset($requestData['todos']) && is_array($requestData['todos'])) {
+                // todos: [{id: 1, order: 1}, {id: 2, order: 2}] 形式の場合
+                \Log::info('todos形式のデータを検出', ['todos' => $requestData['todos']]);
+                $todosData = $requestData['todos'];
+            } else {
+                \Log::error('無効なリクエスト形式', ['request_data' => $requestData]);
+                return response()->json([
+                    'success' => false,
+                    'message' => '無効なリクエスト形式です。orderまたはtodosが必要です。',
+                    'received_data' => $requestData
+                ], 422);
+            }
+
+            \Log::info('変換後のTodoデータ', ['todos_data' => $todosData]);
+
+            // バリデーション
+            $validatedData = validator(['todos' => $todosData], [
+                'todos' => 'required|array',
+                'todos.*.id' => 'required|integer|exists:todos,id',
+                'todos.*.order' => 'required|integer|min:1',
+            ])->validate();
+
+            \Log::info('バリデーション成功', ['validated_data' => $validatedData]);
+
+            // トランザクション内で順序を更新
+            \DB::transaction(function () use ($validatedData) {
+                foreach ($validatedData['todos'] as $todoData) {
+                    \Log::info('Todo順序更新中', [
+                        'todo_id' => $todoData['id'],
+                        'new_order' => $todoData['order']
+                    ]);
+                    
+                    $updated = Todo::where('id', $todoData['id'])
+                        ->update(['order' => $todoData['order']]);
+                    
+                    \Log::info('Todo順序更新結果', [
+                        'todo_id' => $todoData['id'],
+                        'updated_rows' => $updated
+                    ]);
+                }
+            });
+
+            // 更新後のTodoリストを取得
+            $todos = Todo::ordered()->with(['todoDetails' => function($query) {
+                $query->orderBy('order');
+            }])->get();
+
+            \Log::info('Todo順序更新完了', [
+                'updated_todos_count' => $todos->count(),
+                'final_order' => $todos->pluck('order', 'id')->toArray()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $todos,
+                'message' => 'Todoの順序が正常に更新されました。'
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Todo順序更新バリデーションエラー', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'バリデーションエラーが発生しました。',
+                'errors' => $e->errors(),
+                'received_data' => $request->all()
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Todo順序更新エラー', [
+                'error_message' => $e->getMessage(),
+                'error_trace' => $e->getTraceAsString(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Todoの順序更新に失敗しました。',
+                'error' => $e->getMessage(),
+                'received_data' => $request->all()
+            ], 500);
+        }
     }
 }
