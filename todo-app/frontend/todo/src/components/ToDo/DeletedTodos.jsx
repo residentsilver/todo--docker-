@@ -254,31 +254,7 @@ const DeletedTodos = () => {
                                         </h3>
                                     </div>
 
-                                    {/* 現在のTodo詳細情報 */}
-                                    {todo.todo_details && todo.todo_details.length > 0 && (
-                                        <div className="todo-details">
-                                            <h4>📝 現在の詳細情報:</h4>
-                                            <ul className="todo-details-list">
-                                                {todo.todo_details.map(detail => (
-                                                    <li key={detail.id} className="todo-detail-item active-detail">
-                                                        <div className="detail-content">
-                                                            <span className={`detail-status ${detail.completed ? 'completed' : 'pending'}`}>
-                                                                {detail.completed ? '✅' : '⏳'}
-                                                            </span>
-                                                            <span className="detail-description">
-                                                                {detail.description || '説明なし'}
-                                                            </span>
-                                                            <span className="detail-order">
-                                                                順序: {detail.order}
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {/* 削除されたTodo詳細情報 */}
+                                    {/* 削除されたTodo詳細情報のみ表示 */}
                                     {todo.deleted_todo_details && todo.deleted_todo_details.length > 0 && (
                                         <div className="todo-details deleted-details">
                                             <h4>🗑️ 削除された詳細情報:</h4>
