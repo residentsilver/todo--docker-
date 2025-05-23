@@ -3,18 +3,28 @@ import ReactDOM from 'react-dom/client';
 import './App.css';
 // import App from './pages/App';
 import reportWebVitals from './reportWebVitals';
-import Menu from './components/Layout/Menu';
+// Menu コンポーネントはRouting内で管理されるため、ここからは削除
 import { Box } from '@mui/material';
 import Routing from './components/Route/Routing';
+
+/**
+ * アプリケーションのエントリーポイント
+ * 
+ * @description React アプリケーションのメインエントリーポイント
+ *              ルーティングとレイアウトを初期化
+ * @author システム開発者
+ * @version 1.1
+ */
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
   <Box>
-    <Menu/>
+    {/* MenuコンポーネントはRouting内で管理されるため、ここでは不要 */}
     {/* <React.StrictMode> */}
     {/* <App /> */}
-    { <Routing />}
-  {/* </React.StrictMode> */}
+    <Routing />
+    {/* </React.StrictMode> */}
   </Box>
 );
 
