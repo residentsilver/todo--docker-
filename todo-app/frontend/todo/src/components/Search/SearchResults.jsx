@@ -27,6 +27,8 @@ import './SearchResults.css';
  * 
  * @description 検索結果のTodoアイテムを表示し、
  *              検索クエリのハイライト機能を提供
+ *              検索に一致するtodoDetailsのみを表示
+ *              詳細な検索統計情報を表示
  * @author システム開発者
  * @version 1.0
  */
@@ -38,6 +40,7 @@ const SearchResults = () => {
         searchMode,
         totalResults,
         hasResults,
+        searchStats,
         highlightSearchTerm,
         clearSearch
     } = useSearch();
@@ -86,18 +89,28 @@ const SearchResults = () => {
     };
 
     /**
-     * Todo詳細の完了状況を取得
+     * 検索クエリに一致するTodo詳細を取得（searchMetaから取得）
      * 
-     * @param {Array} todoDetails - Todo詳細リスト
+     * @param {Object} todo - Todoオブジェクト（searchMeta付き）
+     * @returns {Array} 検索クエリに一致する詳細項目のリスト
+     */
+    const getMatchingDetails = (todo) => {
+        return todo.searchMeta?.matchingDetails || [];
+    };
+
+    /**
+     * Todo詳細の完了状況を取得（検索に一致する項目のみ）
+     * 
+     * @param {Array} matchingDetails - 検索に一致するTodo詳細リスト
      * @returns {Object} 完了状況の統計
      */
-    const getCompletionStats = (todoDetails) => {
-        if (!todoDetails || todoDetails.length === 0) {
+    const getCompletionStats = (matchingDetails) => {
+        if (!matchingDetails || matchingDetails.length === 0) {
             return { completed: 0, total: 0, percentage: 0 };
         }
         
-        const completed = todoDetails.filter(detail => detail.completed).length;
-        const total = todoDetails.length;
+        const completed = matchingDetails.filter(detail => detail.completed).length;
+        const total = matchingDetails.length;
         const percentage = Math.round((completed / total) * 100);
         
         return { completed, total, percentage };
@@ -135,8 +148,32 @@ const SearchResults = () => {
                 </Box>
                 
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                    「{searchQuery}」の検索結果: {totalResults}件
+                    「{searchQuery}」の検索結果: {totalResults}件のTodo
                 </Typography>
+                
+                {/* 詳細な検索統計 */}
+                {searchStats && !isSearching && (
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+                        {searchStats.titleMatches > 0 && (
+                            <Chip
+                                size="small"
+                                label={`タイトル一致: ${searchStats.titleMatches}件`}
+                                color="primary"
+                                variant="outlined"
+                                sx={{ fontSize: '0.7rem', height: 20 }}
+                            />
+                        )}
+                        {searchStats.detailMatches > 0 && (
+                            <Chip
+                                size="small"
+                                label={`詳細一致: ${searchStats.totalDetailMatches}項目`}
+                                color="secondary"
+                                variant="outlined"
+                                sx={{ fontSize: '0.7rem', height: 20 }}
+                            />
+                        )}
+                    </Box>
+                )}
             </Box>
 
             <Divider />
@@ -164,7 +201,11 @@ const SearchResults = () => {
             {!isSearching && hasResults && (
                 <List sx={{ p: 0 }}>
                     {searchResults.map((todo, index) => {
-                        const stats = getCompletionStats(todo.todo_details);
+                        // searchMetaから情報を取得
+                        const matchingDetails = getMatchingDetails(todo);
+                        const stats = getCompletionStats(matchingDetails);
+                        const titleMatches = todo.searchMeta?.titleMatch || false;
+                        const hasDetailMatch = todo.searchMeta?.detailMatch || false;
                         
                         return (
                             <React.Fragment key={todo.id}>
@@ -189,12 +230,34 @@ const SearchResults = () => {
                                                     {renderHighlightedText(todo.title)}
                                                 </Typography>
                                                 
-                                                {/* 完了状況の表示 */}
-                                                {stats.total > 0 && (
+                                                {/* マッチタイプの表示 */}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                                    {titleMatches && (
+                                                        <Chip
+                                                            size="small"
+                                                            label="タイトル一致"
+                                                            color="primary"
+                                                            variant="outlined"
+                                                            sx={{ fontSize: '0.7rem', height: 20 }}
+                                                        />
+                                                    )}
+                                                    {hasDetailMatch && (
+                                                        <Chip
+                                                            size="small"
+                                                            label={`詳細 ${matchingDetails.length}件一致`}
+                                                            color="secondary"
+                                                            variant="outlined"
+                                                            sx={{ fontSize: '0.7rem', height: 20 }}
+                                                        />
+                                                    )}
+                                                </Box>
+                                                
+                                                {/* 一致した詳細項目の完了状況表示 */}
+                                                {hasDetailMatch && (
                                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
                                                         <Chip
                                                             size="small"
-                                                            label={`${stats.completed}/${stats.total} 完了`}
+                                                            label={`一致項目: ${stats.completed}/${stats.total} 完了`}
                                                             color={stats.percentage === 100 ? 'success' : 'default'}
                                                             variant="outlined"
                                                         />
@@ -206,16 +269,13 @@ const SearchResults = () => {
                                             </Box>
                                         }
                                         secondary={
-                                            todo.todo_details && todo.todo_details.length > 0 && (
+                                            hasDetailMatch && (
                                                 <Box sx={{ mt: 1 }}>
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        詳細項目:
+                                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                                        一致する詳細項目:
                                                     </Typography>
-                                                    {todo.todo_details
-                                                        .filter(detail => 
-                                                            detail.description?.toLowerCase().includes(searchQuery.toLowerCase())
-                                                        )
-                                                        .slice(0, 2) // 最大2件まで表示
+                                                    {matchingDetails
+                                                        .slice(0, 3) // 最大3件まで表示
                                                         .map((detail, detailIndex) => (
                                                             <Box key={detail.id} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
                                                                 {detail.completed ? (
@@ -223,19 +283,18 @@ const SearchResults = () => {
                                                                 ) : (
                                                                     <RadioButtonUncheckedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
                                                                 )}
-                                                                <Typography variant="caption">
+                                                                <Typography variant="caption" sx={{ 
+                                                                    color: detail.completed ? 'success.main' : 'text.primary',
+                                                                    fontWeight: 500
+                                                                }}>
                                                                     {renderHighlightedText(detail.description)}
                                                                 </Typography>
                                                             </Box>
                                                         ))
                                                     }
-                                                    {todo.todo_details.filter(detail => 
-                                                        detail.description?.toLowerCase().includes(searchQuery.toLowerCase())
-                                                    ).length > 2 && (
-                                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                                                            ...他 {todo.todo_details.filter(detail => 
-                                                                detail.description?.toLowerCase().includes(searchQuery.toLowerCase())
-                                                            ).length - 2} 件
+                                                    {matchingDetails.length > 3 && (
+                                                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block', fontStyle: 'italic' }}>
+                                                            ...他 {matchingDetails.length - 3} 件の一致項目
                                                         </Typography>
                                                     )}
                                                 </Box>

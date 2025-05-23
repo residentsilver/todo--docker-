@@ -28,16 +28,19 @@ const SortableToDoDetails = (props) => {
 
     return (
         <div ref={setNodeRef} style={style}>
-            {/* ドラッグハンドルアイコン */}
-            <IconButton
-                {...attributes}
-                {...listeners}
-                aria-label="ドラッグハンドル"
-                size="small"
-                style={{ cursor: 'grab', marginRight: '8px' }}
-            >
-                <DragIndicatorIcon />
-            </IconButton>
+            {/* ドラッグハンドルアイコン（検索モードでは無効化） */}
+            {!props.isSearchMode && (
+                <IconButton
+                    {...attributes}
+                    {...listeners}
+                    aria-label="ドラッグハンドル"
+                    size="small"
+                    style={{ cursor: 'grab', marginRight: '8px' }}
+                >
+                    <DragIndicatorIcon />
+                </IconButton>
+            )}
+            
             {/* ToDoDetailsコンポーネント */}
             <ToDoDetails
                 id={props.id}
@@ -47,6 +50,9 @@ const SortableToDoDetails = (props) => {
                 setDetails={props.setDetails}
                 details={props.details}
                 onAddNewDetail={props.onAddNewDetail}
+                isSearchMode={props.isSearchMode}
+                searchQuery={props.searchQuery}
+                renderHighlightedText={props.renderHighlightedText}
             />
         </div>
     );

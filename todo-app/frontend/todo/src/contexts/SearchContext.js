@@ -6,6 +6,7 @@ import { useCurrentToDoList } from '../components/hooks/ToDoList';
  * 
  * @description アプリケーション全体で検索状態を共有し、
  *              Todoアイテムの検索・フィルタリング機能を提供
+ *              検索結果に詳細な一致情報を含める
  * @author システム開発者
  * @version 1.0
  */
@@ -24,6 +25,12 @@ export const SearchProvider = ({ children }) => {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchMode, setSearchMode] = useState(false); // 検索モードのON/OFF
+    const [searchStats, setSearchStats] = useState({
+        totalTodos: 0,
+        titleMatches: 0,
+        detailMatches: 0,
+        totalDetailMatches: 0
+    });
     
     // Todoリストの取得
     const todoList = useCurrentToDoList();
@@ -33,24 +40,67 @@ export const SearchProvider = ({ children }) => {
      * 
      * @param {string} query - 検索クエリ
      * @param {Array} todos - 検索対象のTodoリスト
-     * @returns {Array} 検索結果のTodoリスト
+     * @returns {Object} 検索結果とその統計情報
      */
     const searchTodos = (query, todos) => {
-        if (!query || !todos) return [];
+        if (!query || !todos) {
+            return {
+                results: [],
+                stats: {
+                    totalTodos: 0,
+                    titleMatches: 0,
+                    detailMatches: 0,
+                    totalDetailMatches: 0
+                }
+            };
+        }
         
         const lowercaseQuery = query.toLowerCase();
+        const results = [];
+        let titleMatches = 0;
+        let detailMatches = 0;
+        let totalDetailMatches = 0;
         
-        return todos.filter(todo => {
+        todos.forEach(todo => {
             // Todoタイトルでの検索
             const titleMatch = todo.title?.toLowerCase().includes(lowercaseQuery);
             
             // Todo詳細での検索（todo_detailsがある場合）
-            const detailsMatch = todo.todo_details?.some(detail => 
+            const matchingDetails = todo.todo_details?.filter(detail => 
                 detail.description?.toLowerCase().includes(lowercaseQuery)
-            );
+            ) || [];
             
-            return titleMatch || detailsMatch;
+            const hasDetailMatch = matchingDetails.length > 0;
+            
+            // タイトルまたは詳細のいずれかに一致する場合、結果に含める
+            if (titleMatch || hasDetailMatch) {
+                results.push({
+                    ...todo,
+                    searchMeta: {
+                        titleMatch,
+                        detailMatch: hasDetailMatch,
+                        matchingDetailsCount: matchingDetails.length,
+                        matchingDetails
+                    }
+                });
+                
+                if (titleMatch) titleMatches++;
+                if (hasDetailMatch) {
+                    detailMatches++;
+                    totalDetailMatches += matchingDetails.length;
+                }
+            }
         });
+        
+        return {
+            results,
+            stats: {
+                totalTodos: results.length,
+                titleMatches,
+                detailMatches,
+                totalDetailMatches
+            }
+        };
     };
 
     /**
@@ -64,6 +114,12 @@ export const SearchProvider = ({ children }) => {
         
         if (!query.trim()) {
             setSearchResults([]);
+            setSearchStats({
+                totalTodos: 0,
+                titleMatches: 0,
+                detailMatches: 0,
+                totalDetailMatches: 0
+            });
             setSearchMode(false);
             setIsSearching(false);
             return;
@@ -73,8 +129,9 @@ export const SearchProvider = ({ children }) => {
         
         // 検索実行（デバウンス処理）
         const timeoutId = setTimeout(() => {
-            const results = searchTodos(query, todoList);
-            setSearchResults(results);
+            const searchResult = searchTodos(query, todoList);
+            setSearchResults(searchResult.results);
+            setSearchStats(searchResult.stats);
             setIsSearching(false);
         }, 300);
         
@@ -87,6 +144,12 @@ export const SearchProvider = ({ children }) => {
     const clearSearch = () => {
         setSearchQuery('');
         setSearchResults([]);
+        setSearchStats({
+            totalTodos: 0,
+            titleMatches: 0,
+            detailMatches: 0,
+            totalDetailMatches: 0
+        });
         setSearchMode(false);
         setIsSearching(false);
     };
@@ -122,6 +185,7 @@ export const SearchProvider = ({ children }) => {
         searchResults,
         isSearching,
         searchMode,
+        searchStats,
         
         // 検索関数
         setSearchQuery,
@@ -129,7 +193,7 @@ export const SearchProvider = ({ children }) => {
         clearSearch,
         highlightSearchTerm,
         
-        // 検索統計
+        // 検索統計（後方互換性のため）
         totalResults: searchResults.length,
         hasResults: searchResults.length > 0,
     };

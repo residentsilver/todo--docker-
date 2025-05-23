@@ -1,5 +1,6 @@
-import { ListItemButton, ListItem, IconButton, Checkbox, ListItemIcon, TextField } from '@mui/material';
+import { ListItemButton, ListItem, IconButton, Checkbox, ListItemIcon, TextField, Typography, Box } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
+import SearchIcon from '@mui/icons-material/Search';
 import { useDeleteToDoDetailMutateTask , useUpdateToDoDetailMutateTask } from '../hooks/ToDoDetail';
 import React, { useState, useEffect } from 'react';
 
@@ -17,6 +18,9 @@ const ToDoDetails = (props) => {
     //更新イベント
     const { updateToDoDetailMutation } = useUpdateToDoDetailMutateTask();
     const eventUpdateToDoDetail = (event) => {
+        // 検索モードでは更新を無効化
+        if (props.isSearchMode) return;
+        
         clearTimeout(timer);
 
         const newTimer = setTimeout(() => {
@@ -32,6 +36,12 @@ const ToDoDetails = (props) => {
 
     //チェックボックスイベント
     const eventCheckToDoDetail = (event) => {
+        // 検索モードでは更新を無効化
+        if (props.isSearchMode) {
+            event.preventDefault();
+            return;
+        }
+        
         const newCompleted = event.target.checked;
         setIsCompleted(newCompleted);
 
@@ -44,6 +54,9 @@ const ToDoDetails = (props) => {
 
         //テキストフィールドのキーダウンイベント
         const eventKeyDownToDoDetail = (event) => {
+            // 検索モードではキーイベントを無効化
+            if (props.isSearchMode) return;
+            
             if (event.key === 'Enter') {
                 event.preventDefault();
                 // 現在のdetailのインデックスを取得
@@ -82,6 +95,9 @@ const ToDoDetails = (props) => {
     //削除イベント
     const { deleteToDoDetailMutation } = useDeleteToDoDetailMutateTask();
     const eventDeleteToDoDetail = (event) => {
+        // 検索モードでは削除を無効化
+        if (props.isSearchMode) return;
+        
         deleteToDoDetailMutation.mutate(ToDoDetail);
     }
 
@@ -94,19 +110,36 @@ const ToDoDetails = (props) => {
     }, []);
     
     return (
-
         <ListItem
             key={props.id}
             secondaryAction={
                 <>
-                    <IconButton
-                        edge="end"
-                        aria-label="delete"
-                        onClick={eventDeleteToDoDetail}>
-                        <DeleteIcon />
-                    </IconButton>
+                    {/* 検索モードでは削除ボタンを非表示 */}
+                    {!props.isSearchMode && (
+                        <IconButton
+                            edge="end"
+                            aria-label="delete"
+                            onClick={eventDeleteToDoDetail}>
+                            <DeleteIcon />
+                        </IconButton>
+                    )}
+                    {/* 検索モードでは検索アイコンを表示 */}
+                    {props.isSearchMode && (
+                        <IconButton
+                            edge="end"
+                            aria-label="search match"
+                            disabled>
+                            <SearchIcon color="primary" />
+                        </IconButton>
+                    )}
                 </>
             }
+            sx={{
+                backgroundColor: props.isSearchMode ? '#f0f7ff' : 'transparent',
+                borderRadius: props.isSearchMode ? 1 : 0,
+                mb: props.isSearchMode ? 0.5 : 0,
+                border: props.isSearchMode ? '1px solid #e3f2fd' : 'none'
+            }}
         >
             <ListItemButton disableRipple>
                 <ListItemIcon>
@@ -115,19 +148,47 @@ const ToDoDetails = (props) => {
                         checked={isCompleted}
                         tabIndex={-1}
                         onChange={eventCheckToDoDetail}
+                        disabled={props.isSearchMode} // 検索モードでは無効化
+                        sx={{
+                            color: props.isSearchMode ? 'text.secondary' : undefined
+                        }}
                     />
                 </ListItemIcon>
-                <TextField
-                    variant="standard"
-                    margin="dense"
-                    defaultValue={props.description}
-                    fullWidth
-                    onChange={eventUpdateToDoDetail}
-                    onKeyDown={eventKeyDownToDoDetail}
-                    inputProps={{
-                        'data-detail-id': props.id
-                    }}
-                />
+                
+                {/* 検索モードでは読み取り専用表示 */}
+                {props.isSearchMode ? (
+                    <Box sx={{ flexGrow: 1, py: 1 }}>
+                        <Typography 
+                            variant="body1" 
+                            sx={{ 
+                                color: isCompleted ? 'text.secondary' : 'text.primary',
+                                textDecoration: isCompleted ? 'line-through' : 'none',
+                                fontWeight: 500
+                            }}
+                        >
+                            {props.renderHighlightedText ? 
+                                props.renderHighlightedText(props.description) : 
+                                props.description
+                            }
+                        </Typography>
+                        <Typography variant="caption" color="primary" sx={{ display: 'block', mt: 0.5 }}>
+                            検索に一致した項目
+                        </Typography>
+                    </Box>
+                ) : (
+                    /* 通常モードでは編集可能なTextField */
+                    <TextField
+                        variant="standard"
+                        margin="dense"
+                        defaultValue={props.description}
+                        fullWidth
+                        onChange={eventUpdateToDoDetail}
+                        onKeyDown={eventKeyDownToDoDetail}
+                        inputProps={{
+                            'data-detail-id': props.id
+                        }}
+                    />
+                )}
             </ListItemButton>
         </ListItem>
     );
