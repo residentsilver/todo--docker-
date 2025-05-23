@@ -9,9 +9,15 @@ use App\Http\Controllers\ToDoDetailController;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
+// Todo関連のルート
 Route::put('/todoDetails/{todo}/order', [TodoDetailController::class, 'updateOrder']);
 Route::resource('todos', TodoController::class);
 Route::resource('tododetails', ToDoDetailController::class);
+
+// 削除されたTodo関連のルート
+Route::get('/todos-deleted', [TodoController::class, 'getDeletedTodos']);
+Route::post('/todos/{id}/restore', [TodoController::class, 'restoreTodo']);
+Route::post('/todos/{todoId}/details/{detailId}/restore', [TodoController::class, 'restoreTodoDetail']);
 
 //remind機能
 // 認証ルート

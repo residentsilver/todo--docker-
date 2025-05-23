@@ -1,0 +1,432 @@
+/* 削除されたTodoアイテム表示コンポーネントのスタイル */
+
+.deleted-todos-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* ヘッダー部分 */
+.deleted-todos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.deleted-todos-header h1 {
+  color: white;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.refresh-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.refresh-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ローディング状態 */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #e9ecef;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* エラーメッセージ */
+.error-message {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* データなし表示 */
+.no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.no-data p {
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+/* 削除されたTodoリスト */
+.deleted-todos-list {
+  display: grid;
+  gap: 30px;
+}
+
+/* セクション */
+.section {
+  display: grid;
+  gap: 20px;
+}
+
+.section-title {
+  color: #495057;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 15px 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 10px;
+  border-left: 4px solid #667eea;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 削除されたTodoアイテム */
+.deleted-todo-item {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.deleted-todo-item:hover {
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+/* アクティブなTodo */
+.active-todo {
+  border: 2px solid #28a745;
+  background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+}
+
+.active-todo:hover {
+  box-shadow: 0 8px 12px rgba(40, 167, 69, 0.2);
+  border-color: #20c997;
+}
+
+/* Todoヘッダー */
+.todo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f8f9fa;
+}
+
+.todo-title {
+  color: #495057;
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+  flex: 1;
+  margin-right: 20px;
+}
+
+.active-title {
+  color: #155724;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.active-badge {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.todo-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.deleted-date {
+  background-color: #ffeaa7;
+  color: #2d3436;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.restore-button {
+  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.restore-button:hover {
+  background: linear-gradient(135deg, #00a085 0%, #008f76 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 184, 148, 0.3);
+}
+
+.restore-button:disabled {
+  background: #ced4da;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Todo詳細セクション */
+.todo-details {
+  margin-top: 15px;
+}
+
+.todo-details h4 {
+  color: #495057;
+  font-size: 1.1rem;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+.deleted-details h4 {
+  color: #dc3545;
+}
+
+.todo-details-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+/* Todo詳細アイテム */
+.todo-detail-item {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+}
+
+.todo-detail-item:hover {
+  background-color: #e9ecef;
+}
+
+.active-detail {
+  background-color: #d4edda;
+  border-color: #c3e6cb;
+}
+
+.active-detail:hover {
+  background-color: #c3e6cb;
+}
+
+.deleted-detail {
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+  position: relative;
+}
+
+.deleted-detail:hover {
+  background-color: #f5c6cb;
+}
+
+.detail-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.detail-status {
+  font-size: 1.2rem;
+  min-width: 24px;
+}
+
+.detail-status.completed {
+  opacity: 0.7;
+}
+
+.detail-description {
+  flex: 1;
+  color: #495057;
+  font-weight: 500;
+}
+
+.detail-order {
+  background-color: #6c757d;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.restore-detail-button {
+  background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+  border: none;
+  color: #212529;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.restore-detail-button:hover {
+  background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+}
+
+.restore-detail-button:disabled {
+  background: #ced4da;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.detail-deleted-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #dee2e6;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .deleted-todos-container {
+    padding: 15px;
+  }
+  
+  .deleted-todos-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .deleted-todos-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.3rem;
+    padding: 12px 15px;
+  }
+  
+  .todo-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+  
+  .todo-meta {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .detail-content {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .detail-description {
+    min-width: 200px;
+  }
+  
+  .active-title {
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .deleted-todo-item {
+    padding: 16px;
+  }
+  
+  .todo-title {
+    font-size: 1.2rem;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+    padding: 10px 12px;
+  }
+  
+  .detail-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .detail-order {
+    align-self: flex-end;
+  }
+  
+  .restore-detail-button {
+    align-self: flex-start;
+    margin-top: 5px;
+  }
+} 
