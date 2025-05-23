@@ -17,11 +17,14 @@ import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import HomeIcon from '@mui/icons-material/Home';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
+import { useSearch } from '../../contexts/SearchContext';
+import SearchResults from '../Search/SearchResults';
 
 /**
  * 検索コンポーネントのスタイル定義
@@ -57,6 +60,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   '& .MuiInputBase-input': {
     padding: theme.spacing(1, 1, 1, 0),
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    paddingRight: theme.spacing(4), // クリアボタンのスペース
     transition: theme.transitions.create('width'),
     [theme.breakpoints.up('sm')]: {
       width: '12ch',
@@ -64,6 +68,18 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
         width: '20ch',
       },
     },
+  },
+}));
+
+const ClearButton = styled(IconButton)(({ theme }) => ({
+  position: 'absolute',
+  right: theme.spacing(0.5),
+  top: '50%',
+  transform: 'translateY(-50%)',
+  padding: theme.spacing(0.5),
+  color: 'inherit',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.common.white, 0.1),
   },
 }));
 
@@ -102,13 +118,22 @@ const menuItems = [
  * 
  * @description Material-UIを使用したレスポンシブなヘッダーとサイドバーナビゲーション
  *              ハンバーガーメニューから各ページへの遷移が可能
+ *              リアルタイム検索機能を搭載
  * @author システム開発者
- * @version 1.1
+ * @version 1.2
  */
 export default function SearchAppBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // 検索機能の状態管理
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+    clearSearch, 
+    searchMode 
+  } = useSearch();
 
   /**
    * ドロワーの開閉を切り替える関数
@@ -138,6 +163,33 @@ export default function SearchAppBar() {
    */
   const isActivePath = (path) => {
     return location.pathname === path;
+  };
+
+  /**
+   * 検索入力変更時の処理
+   * 
+   * @param {Event} event - 入力イベント
+   */
+  const handleSearchChange = (event) => {
+    setSearchQuery(event.target.value);
+  };
+
+  /**
+   * 検索クリア処理
+   */
+  const handleClearSearch = () => {
+    clearSearch();
+  };
+
+  /**
+   * 検索入力のキーダウン処理
+   * 
+   * @param {Event} event - キーボードイベント
+   */
+  const handleSearchKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      clearSearch();
+    }
   };
 
   /**
@@ -264,14 +316,30 @@ export default function SearchAppBar() {
             Todo App
           </Typography>
           
+          {/* 検索バー */}
           <Search>
             <SearchIconWrapper>
               <SearchIcon />
             </SearchIconWrapper>
             <StyledInputBase
-              placeholder="検索..."
-              inputProps={{ 'aria-label': 'search' }}
+              placeholder="Todoを検索..."
+              inputProps={{ 'aria-label': 'search todos' }}
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
             />
+            {searchQuery && (
+              <ClearButton
+                size="small"
+                onClick={handleClearSearch}
+                aria-label="clear search"
+              >
+                <ClearIcon fontSize="small" />
+              </ClearButton>
+            )}
+            
+            {/* 検索結果の表示 */}
+            <SearchResults />
           </Search>
         </Toolbar>
       </AppBar>
