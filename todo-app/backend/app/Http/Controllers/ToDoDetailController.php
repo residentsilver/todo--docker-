@@ -11,22 +11,15 @@ use Illuminate\Support\Facades\Auth;
 class ToDoDetailController extends Controller
 {
     /**
-     * 認証チェックのヘルパーメソッド
+     * コンストラクタ - 認証ミドルウェアを適用
      */
-    private function checkAuth()
+    public function __construct()
     {
-        if (!Auth::guard('sanctum')->check()) {
-            return response()->json(['message' => '認証が必要です。'], 401);
-        }
-        return null;
+        $this->middleware('auth:sanctum');
     }
 
     public function index()
     {
-        // 認証チェック
-        $authCheck = $this->checkAuth();
-        if ($authCheck) return $authCheck;
-
         // 認証されたユーザーのTodoDetailのみを取得
         $todoDetails = TodoDetail::whereHas('todo', function ($query) {
             $query->where('user_id', Auth::id());
@@ -43,10 +36,6 @@ class ToDoDetailController extends Controller
      */
     public function show($id)
     {
-        // 認証チェック
-        $authCheck = $this->checkAuth();
-        if ($authCheck) return $authCheck;
-
         $todoDetail = TodoDetail::whereHas('todo', function ($query) {
             $query->where('user_id', Auth::id());
         })->find($id);
@@ -66,10 +55,6 @@ class ToDoDetailController extends Controller
      */
     public function store(Request $request)
     {
-        // 認証チェック
-        $authCheck = $this->checkAuth();
-        if ($authCheck) return $authCheck;
-
         $validatedData = $request->validate([
             'todo_id' => 'required|exists:todos,id',
             'description' => 'nullable|string',
@@ -105,10 +90,6 @@ class ToDoDetailController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // 認証チェック
-        $authCheck = $this->checkAuth();
-        if ($authCheck) return $authCheck;
-
         $todoDetail = TodoDetail::whereHas('todo', function ($query) {
             $query->where('user_id', Auth::id());
         })->find($id);
@@ -147,10 +128,6 @@ class ToDoDetailController extends Controller
      */
     public function destroy($id)
     {
-        // 認証チェック
-        $authCheck = $this->checkAuth();
-        if ($authCheck) return $authCheck;
-
         $todoDetail = TodoDetail::whereHas('todo', function ($query) {
             $query->where('user_id', Auth::id());
         })->find($id);
@@ -166,10 +143,6 @@ class ToDoDetailController extends Controller
 
     public function updateOrder(Request $request, Todo $todo)
     {
-        // 認証チェック
-        $authCheck = $this->checkAuth();
-        if ($authCheck) return $authCheck;
-
         // Todoが認証されたユーザーのものかチェック
         if ($todo->user_id !== Auth::id()) {
             return response()->json(['message' => 'アクセス権限がありません。'], 403);
