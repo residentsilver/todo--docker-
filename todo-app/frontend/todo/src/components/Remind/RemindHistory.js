@@ -36,15 +36,15 @@ import {
   History as HistoryIcon
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
-import axios from 'axios';
+import apiClient from '../../api/axios';
 
 /**
  * APIリクエスト関数
  */
 const api = {
-  // リマインド履歴取得
+  // リマインド履歴取得（認証付き）
   fetchReminderHistories: async (params = {}) => {
-    const response = await axios.get('/api/remind/histories', { params });
+    const response = await apiClient.get('/remind/histories', { params });
     return response.data;
   }
 };

@@ -41,27 +41,27 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ja } from 'date-fns/locale';
 import { useMutation, useQueryClient } from 'react-query';
-import axios from 'axios';
+import apiClient from '../../api/axios';
 
 /**
  * APIリクエスト関数
  */
 const api = {
-  // サブスクリプション作成
+  // サブスクリプション作成（認証付き）
   createSubscription: async (data) => {
-    const response = await axios.post('/api/remind/subscriptions', data);
+    const response = await apiClient.post('/remind/subscriptions', data);
     return response.data;
   },
 
-  // サブスクリプション更新
+  // サブスクリプション更新（認証付き）
   updateSubscription: async ({ id, data }) => {
-    const response = await axios.put(`/api/remind/subscriptions/${id}`, data);
+    const response = await apiClient.put(`/remind/subscriptions/${id}`, data);
     return response.data;
   },
 
-  // メッセージプレビュー取得
+  // メッセージプレビュー取得（認証付き）
   getMessagePreview: async (id, params = {}) => {
-    const response = await axios.get(`/api/remind/subscriptions/${id}/preview`, { params });
+    const response = await apiClient.get(`/remind/subscriptions/${id}/preview`, { params });
     return response.data;
   }
 };

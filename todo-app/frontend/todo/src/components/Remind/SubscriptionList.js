@@ -39,33 +39,33 @@ import {
   Link as LinkIcon
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
-import axios from 'axios';
+import apiClient from '../../api/axios';
 
 /**
  * APIリクエスト関数
  */
 const api = {
-  // サブスクリプション一覧取得
+  // サブスクリプション一覧取得（認証付き）
   fetchSubscriptions: async (params = {}) => {
-    const response = await axios.get('/api/remind/subscriptions', { params });
+    const response = await apiClient.get('/remind/subscriptions', { params });
     return response.data;
   },
 
-  // サブスクリプション削除
+  // サブスクリプション削除（認証付き）
   deleteSubscription: async (id) => {
-    const response = await axios.delete(`/api/remind/subscriptions/${id}`);
+    const response = await apiClient.delete(`/remind/subscriptions/${id}`);
     return response.data;
   },
 
-  // テストリマインダー送信
+  // テストリマインド送信（認証付き）
   sendTestReminder: async (id, params = {}) => {
-    const response = await axios.post(`/api/remind/subscriptions/${id}/test`, params);
+    const response = await apiClient.post(`/remind/subscriptions/${id}/test`, params);
     return response.data;
   },
 
-  // メッセージプレビュー取得
+  // メッセージプレビュー取得（認証付き）
   getMessagePreview: async (id, params = {}) => {
-    const response = await axios.get(`/api/remind/subscriptions/${id}/preview`, { params });
+    const response = await apiClient.get(`/remind/subscriptions/${id}/preview`, { params });
     return response.data;
   }
 };

@@ -52,9 +52,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/subscriptions/{id}/test', [ReminderController::class, 'sendTestReminder']);
         
         // リマインド履歴
+        Route::get('/history', [ReminderController::class, 'getHistory']);
         Route::get('/histories', [ReminderController::class, 'reminderHistories']);
         
         // 統計・分析
+        Route::get('/analytics', [ReminderController::class, 'getAnalytics']);
         Route::get('/monthly-totals', [ReminderController::class, 'monthlyTotals']);
+        
+        // ユーザー設定
+        Route::get('/settings', [ReminderController::class, 'getSettings']);
+        Route::put('/settings', [ReminderController::class, 'updateSettings']);
+        
+        // LINE連携
+        Route::get('/line/status', [ReminderController::class, 'checkLineConnection']);
+        Route::post('/line/connect', [ReminderController::class, 'connectLine']);
+        Route::delete('/line/disconnect', [ReminderController::class, 'disconnectLine']);
     });
 });

@@ -43,27 +43,27 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
-import axios from 'axios';
+import apiClient from '../../api/axios';
 
 /**
  * APIリクエスト関数
  */
 const api = {
-  // ユーザー設定取得
+  // ユーザー設定取得（認証付き）
   fetchUserSettings: async () => {
-    const response = await axios.get('/api/user/settings');
+    const response = await apiClient.get('/remind/settings');
     return response.data;
   },
 
-  // ユーザー設定更新
+  // ユーザー設定更新（認証付き）
   updateUserSettings: async (data) => {
-    const response = await axios.put('/api/user/settings', data);
+    const response = await apiClient.put('/remind/settings', data);
     return response.data;
   },
 
-  // LINE連携状態確認
+  // LINE連携状態確認（認証付き）
   checkLineConnection: async () => {
-    const response = await axios.get('/api/line/status');
+    const response = await apiClient.get('/remind/line/status');
     return response.data;
   }
 };

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Subscription;
 use App\Models\ReminderHistory;
 use App\Models\UserSetting;
+use App\Models\LineToken;
 use Carbon\Carbon;
 
 /**
@@ -477,10 +478,305 @@ class ReminderController extends Controller
      */
     private function recreateReminderHistories(Subscription $subscription): void
     {
-        // 既存の送信待ちリマインドを削除
-        $subscription->reminderHistories()->where('status', 'pending')->delete();
+        // 既存のリマインド履歴を削除
+        $subscription->reminderHistories()->delete();
         
         // 新しいリマインド履歴を作成
         $this->createReminderHistories($subscription);
+    }
+
+    /**
+     * リマインド履歴を取得
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getHistory(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $query = ReminderHistory::whereHas('subscription', function($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })->with(['subscription']);
+
+            // フィルタリング
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+            
+            if ($request->has('from_date')) {
+                $query->where('reminder_date', '>=', $request->from_date);
+            }
+            
+            if ($request->has('to_date')) {
+                $query->where('reminder_date', '<=', $request->to_date);
+            }
+
+            // ソート
+            $sortBy = $request->get('sort_by', 'reminder_date');
+            $sortOrder = $request->get('sort_order', 'desc');
+            $query->orderBy($sortBy, $sortOrder);
+
+            // ページネーション
+            $perPage = $request->get('per_page', 15);
+            $histories = $query->paginate($perPage);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $histories,
+                'message' => 'リマインド履歴を取得しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'リマインド履歴の取得に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * 統計データを取得
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAnalytics(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $startDate = $request->get('start_date', now()->subMonths(12)->startOfMonth());
+            $endDate = $request->get('end_date', now()->endOfMonth());
+            
+            // 基本統計
+            $totalSubscriptions = $user->subscriptions()->count();
+            $activeSubscriptions = $user->subscriptions()->where('status', 'active')->count();
+            $totalAmount = $user->subscriptions()->where('status', 'active')->sum('amount');
+            
+            // 期間内の統計
+            $subscriptionsInPeriod = $user->subscriptions()
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+                
+            // 契約タイプ別統計
+            $contractTypeStats = $user->subscriptions()
+                ->selectRaw('contract_type, COUNT(*) as count, SUM(amount) as total_amount')
+                ->groupBy('contract_type')
+                ->get();
+                
+            // 月別統計
+            $monthlyStats = $user->subscriptions()
+                ->selectRaw('DATE_FORMAT(created_at, "%Y-%m") as month, COUNT(*) as count, SUM(amount) as total_amount')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->groupBy('month')
+                ->orderBy('month')
+                ->get();
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'summary' => [
+                        'total_subscriptions' => $totalSubscriptions,
+                        'active_subscriptions' => $activeSubscriptions,
+                        'total_monthly_amount' => $totalAmount,
+                        'subscriptions_in_period' => $subscriptionsInPeriod,
+                    ],
+                    'contract_type_stats' => $contractTypeStats,
+                    'monthly_stats' => $monthlyStats,
+                ],
+                'message' => '統計データを取得しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => '統計データの取得に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * ユーザー設定を取得
+     * 
+     * @return JsonResponse
+     */
+    public function getSettings(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $settings = UserSetting::getOrCreateForUser($user->id);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $settings,
+                'message' => 'ユーザー設定を取得しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ユーザー設定の取得に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * ユーザー設定を更新
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updateSettings(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'timezone' => 'nullable|string',
+                'default_reminder_days' => 'nullable|array',
+                'default_reminder_days.*' => 'integer|min:1',
+                'default_reminder_time' => 'nullable|date_format:H:i',
+                'line_notification_enabled' => 'boolean',
+                'email_notification_enabled' => 'boolean',
+                'auto_renewal_reminder' => 'boolean',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'バリデーションエラーが発生しました',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = Auth::user();
+            $settings = UserSetting::getOrCreateForUser($user->id);
+            $settings->update($validator->validated());
+
+            return response()->json([
+                'status' => 'success',
+                'data' => $settings->fresh(),
+                'message' => 'ユーザー設定を更新しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'ユーザー設定の更新に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * LINE連携状態を確認
+     * 
+     * @return JsonResponse
+     */
+    public function checkLineConnection(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $lineToken = $user->activeLineToken;
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'connected' => $lineToken !== null,
+                    'connection_date' => $lineToken ? $lineToken->created_at : null,
+                    'line_user_id' => $lineToken ? $lineToken->line_user_id : null,
+                ],
+                'message' => 'LINE連携状態を取得しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'LINE連携状態の確認に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * LINE連携を設定
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function connectLine(Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'line_user_id' => 'required|string',
+                'access_token' => 'required|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'バリデーションエラーが発生しました',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $user = Auth::user();
+            
+            // 既存のアクティブなトークンを無効化
+            $user->lineTokens()->update(['is_active' => false]);
+            
+            // 新しいLINEトークンを作成
+            $lineToken = $user->lineTokens()->create([
+                'line_user_id' => $request->line_user_id,
+                'access_token' => $request->access_token,
+                'is_active' => true,
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'connected' => true,
+                    'connection_date' => $lineToken->created_at,
+                    'line_user_id' => $lineToken->line_user_id,
+                ],
+                'message' => 'LINE連携を設定しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'LINE連携の設定に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * LINE連携を解除
+     * 
+     * @return JsonResponse
+     */
+    public function disconnectLine(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $user->lineTokens()->update(['is_active' => false]);
+
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'connected' => false,
+                ],
+                'message' => 'LINE連携を解除しました'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'LINE連携の解除に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

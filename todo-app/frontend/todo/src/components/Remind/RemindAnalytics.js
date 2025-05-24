@@ -25,23 +25,23 @@ import {
   Subscriptions as SubscriptionsIcon
 } from '@mui/icons-material';
 import { useQuery } from 'react-query';
-import axios from 'axios';
+import apiClient from '../../api/axios';
 
 /**
  * APIリクエスト関数
  */
 const api = {
-  // 月別支払い合計取得
+  // 月別支払い合計取得（認証付き）
   fetchMonthlyTotals: async (year) => {
-    const response = await axios.get('/api/remind/monthly-totals', {
+    const response = await apiClient.get('/remind/monthly-totals', {
       params: { year }
     });
     return response.data;
   },
 
-  // サブスクリプション一覧取得（統計用）
+  // サブスクリプション一覧取得（統計用、認証付き）
   fetchSubscriptionsForStats: async () => {
-    const response = await axios.get('/api/remind/subscriptions', {
+    const response = await apiClient.get('/remind/subscriptions', {
       params: { per_page: 1000 } // 全件取得
     });
     return response.data;
