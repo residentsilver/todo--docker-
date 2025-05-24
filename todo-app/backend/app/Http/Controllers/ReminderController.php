@@ -31,11 +31,11 @@ class ReminderController extends Controller
             $query = $user->subscriptions()->with(['reminderHistories']);
 
             // フィルタリング
-            if ($request->has('status')) {
+            if ($request->has('status') && !empty($request->status)) {
                 $query->where('status', $request->status);
             }
 
-            if ($request->has('contract_type')) {
+            if ($request->has('contract_type') && !empty($request->contract_type)) {
                 $query->where('contract_type', $request->contract_type);
             }
 
