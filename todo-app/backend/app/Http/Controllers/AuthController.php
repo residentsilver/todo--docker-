@@ -7,6 +7,11 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\LogoutRequest;
+use App\Http\Requests\Auth\MeRequest;
+use App\Http\Requests\Auth\UpdateProfileRequest;
 
 /**
  * 認証コントローラー
@@ -18,41 +23,18 @@ class AuthController extends Controller
     /**
      * ユーザー登録
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\Auth\RegisterRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function register(Request $request)
+    public function register(RegisterRequest $request)
     {
-        // バリデーション
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ], [
-            // 名前のバリデーションメッセージ
-            'name.required' => 'ユーザー名を入力してください。',
-            'name.string' => 'ユーザー名は文字列で入力してください。',
-            'name.max' => 'ユーザー名は255文字以内で入力してください。',
-            
-            // メールアドレスのバリデーションメッセージ
-            'email.required' => 'メールアドレスを入力してください。',
-            'email.string' => 'メールアドレスは文字列で入力してください。',
-            'email.email' => '有効なメールアドレスを入力してください。',
-            'email.max' => 'メールアドレスは255文字以内で入力してください。',
-            'email.unique' => 'このメールアドレスは既に使用されています。',
-            
-            // パスワードのバリデーションメッセージ
-            'password.required' => 'パスワードを入力してください。',
-            'password.string' => 'パスワードは文字列で入力してください。',
-            'password.min' => 'パスワードは8文字以上で入力してください。',
-            'password.confirmed' => 'パスワード確認が一致しません。',
-        ]);
+        $validatedData = $request->validated();
 
         // ユーザー作成
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
+            'name' => $validatedData['name'],
+            'email' => $validatedData['email'],
+            'password' => Hash::make($validatedData['password']),
         ]);
 
         // トークン生成
@@ -73,23 +55,16 @@ class AuthController extends Controller
     /**
      * ユーザーログイン
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\Auth\LoginRequest  $request
      * @return \Illuminate\Http\Response
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
-        // バリデーション（メールアドレスまたはユーザー名を受け付ける）
-        $request->validate([
-            'login' => 'required|string', // emailからloginに変更
-            'password' => 'required|string',
-        ], [
-            'login.required' => 'メールアドレスまたはユーザー名を入力してください。',
-            'password.required' => 'パスワードを入力してください。',
-        ]);
+        $validatedData = $request->validated();
 
         // ログイン識別子（メールアドレスまたはユーザー名）
-        $loginField = $request->login;
+        $loginField = $validatedData['login'];
         
         // メールアドレス形式かどうかを判定
         $isEmail = filter_var($loginField, FILTER_VALIDATE_EMAIL);
@@ -102,7 +77,7 @@ class AuthController extends Controller
         }
 
         // パスワード確認
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($validatedData['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'login' => ['認証情報が一致しません。メールアドレス（またはユーザー名）とパスワードを確認してください。'],
             ]);
@@ -126,10 +101,10 @@ class AuthController extends Controller
     /**
      * ユーザーログアウト
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\Auth\LogoutRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function logout(Request $request)
+    public function logout(LogoutRequest $request)
     {
         // トークンの削除
         $request->user()->currentAccessToken()->delete();
@@ -141,10 +116,10 @@ class AuthController extends Controller
     /**
      * 認証済みユーザー情報取得
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\Auth\MeRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function me(Request $request)
+    public function me(MeRequest $request)
     {
         try {
             $user = $request->user();
@@ -174,65 +149,27 @@ class AuthController extends Controller
     /**
      * プロフィール更新
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\Auth\UpdateProfileRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function updateProfile(Request $request)
+    public function updateProfile(UpdateProfileRequest $request)
     {
         $user = $request->user();
-
-        // バリデーション
-        $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
-            'current_password' => 'required_with:password|string',
-            'password' => 'sometimes|required|string|min:8|confirmed',
-        ], [
-            // 名前のバリデーションメッセージ
-            'name.required' => 'ユーザー名を入力してください。',
-            'name.string' => 'ユーザー名は文字列で入力してください。',
-            'name.max' => 'ユーザー名は255文字以内で入力してください。',
-            
-            // メールアドレスのバリデーションメッセージ
-            'email.required' => 'メールアドレスを入力してください。',
-            'email.string' => 'メールアドレスは文字列で入力してください。',
-            'email.email' => '有効なメールアドレスを入力してください。',
-            'email.max' => 'メールアドレスは255文字以内で入力してください。',
-            'email.unique' => 'このメールアドレスは既に使用されています。',
-            
-            // 現在のパスワードのバリデーションメッセージ
-            'current_password.required_with' => 'パスワードを変更する場合は、現在のパスワードを入力してください。',
-            'current_password.string' => '現在のパスワードは文字列で入力してください。',
-            
-            // 新しいパスワードのバリデーションメッセージ
-            'password.required' => '新しいパスワードを入力してください。',
-            'password.string' => 'パスワードは文字列で入力してください。',
-            'password.min' => 'パスワードは8文字以上で入力してください。',
-            'password.confirmed' => 'パスワード確認が一致しません。',
-        ]);
-
-        // 現在のパスワードが提供された場合は確認
-        if ($request->has('current_password')) {
-            if (!Hash::check($request->current_password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'current_password' => ['現在のパスワードが正しくありません。'],
-                ]);
-            }
-        }
+        $validatedData = $request->validated();
 
         // プロフィール情報を更新
         $updateData = [];
         
-        if ($request->has('name')) {
-            $updateData['name'] = $request->name;
+        if (isset($validatedData['name'])) {
+            $updateData['name'] = $validatedData['name'];
         }
         
-        if ($request->has('email')) {
-            $updateData['email'] = $request->email;
+        if (isset($validatedData['email'])) {
+            $updateData['email'] = $validatedData['email'];
         }
         
-        if ($request->has('password')) {
-            $updateData['password'] = Hash::make($request->password);
+        if (isset($validatedData['password'])) {
+            $updateData['password'] = Hash::make($validatedData['password']);
         }
 
         $user->update($updateData);
