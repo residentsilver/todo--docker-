@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Http\Requests\ToDoDetails;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+
+class IndexRequest extends FormRequest
+{
+    /**
+     * 認証チェック - ユーザーがログインしているかを確認
+     *
+     * @return bool
+     */
+    public function authorize(): bool
+    {
+        return Auth::guard('sanctum')->check();
+    }
+
+    /**
+     * バリデーションルールを取得
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        return [];
+    }
+
+    /**
+     * 認証失敗時のエラーメッセージをカスタマイズ
+     *
+     * @return void
+     */
+    protected function failedAuthorization()
+    {
+        abort(401, '認証が必要です。');
+    }
+} 
