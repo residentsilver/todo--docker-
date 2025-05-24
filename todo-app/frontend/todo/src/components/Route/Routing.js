@@ -6,6 +6,7 @@ import Menu from '../Layout/Menu';
 import LoginPage from '../../pages/LoginPage';
 import RegisterPage from '../../pages/RegisterPage';
 import ProfilePage from '../../pages/ProfilePage';
+import RemindPage from '../Remind/RemindPage';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { SearchProvider } from '../../contexts/SearchContext';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
@@ -170,7 +171,16 @@ function Routing() {
                                     </PrivateRoute>
                                 } 
                             />
-                            {/* <Route path="/remind" element={<Index />} /> */}
+                            <Route 
+                                path="/remind" 
+                                element={
+                                    <PrivateRoute>
+                                        <AuthenticatedLayout>
+                                            <RemindPage />
+                                        </AuthenticatedLayout>
+                                    </PrivateRoute>
+                                } 
+                            />
 
                             {/* 404ページ - 認証済みユーザーはホームへ、未認証はログインへ */}
                             <Route 

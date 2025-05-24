@@ -28,6 +28,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
 import { useSearch } from '../../contexts/SearchContext';
 import { useAuth } from '../../contexts/AuthContext';
 import SearchResults from '../Search/SearchResults';
@@ -121,6 +123,12 @@ const menuItems = [
     path: '/aiTodo',
     icon: <SmartToyIcon />,
     description: 'AI搭載Todo機能'
+  },
+  {
+    text: 'リマインド',
+    path: '/remind',
+    icon: <NotificationsIcon />,
+    description: 'サブスクリプション終了リマインド'
   },
   {
     text: '削除済みTodo',
