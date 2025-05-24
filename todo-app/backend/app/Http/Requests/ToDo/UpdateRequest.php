@@ -4,17 +4,29 @@ namespace App\Http\Requests\ToDo;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Todo;
 
-class StoreRequest extends FormRequest
+class UpdateRequest extends FormRequest
 {
     /**
-     * 認証チェック - ユーザーがログインしているかを確認
+     * 認証チェック - ユーザーがログインしており、指定されたTodoにアクセス権限があるかを確認
      *
      * @return bool
      */
     public function authorize(): bool
     {
-        return Auth::guard('sanctum')->check();
+        // Sanctum認証チェック
+        if (!Auth::guard('sanctum')->check()) {
+            return false;
+        }
+
+        // ルートパラメータからTodoを取得
+        $todo = $this->route('todo');
+        if ($todo && $todo->user_id !== Auth::id()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -25,8 +37,7 @@ class StoreRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
+            'title' => 'sometimes|required|string|max:255',
         ];
     }
 
@@ -41,8 +52,6 @@ class StoreRequest extends FormRequest
             'title.required' => 'タイトルは必須です。',
             'title.string' => 'タイトルは文字列である必要があります。',
             'title.max' => 'タイトルは255文字以内で入力してください。',
-            'description.string' => '説明は文字列である必要があります。',
-            'description.max' => '説明は1000文字以内で入力してください。',
         ];
     }
 
@@ -53,6 +62,6 @@ class StoreRequest extends FormRequest
      */
     protected function failedAuthorization()
     {
-        abort(401, '認証が必要です。');
+        abort(403, '指定されたTodoにアクセスする権限がありません。');
     }
-}
+} 

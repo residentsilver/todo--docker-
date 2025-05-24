@@ -5,7 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Todo;
 use App\Models\TodoDetail;
 use Illuminate\Http\Request;
+use App\Http\Requests\ToDo\IndexRequest;
 use App\Http\Requests\ToDo\StoreRequest;
+use App\Http\Requests\ToDo\ShowRequest;
+use App\Http\Requests\ToDo\UpdateRequest;
+use App\Http\Requests\ToDo\DestroyRequest;
+use App\Http\Requests\ToDo\UpdateOrderRequest;
+use App\Http\Requests\ToDo\RestoreRequest;
 use App\Http\Requests\ToDoDetails\StoreRequest as TodoDetailStoreRequest;
 
 /**
@@ -20,10 +26,10 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーのTodoアイテムの一覧を取得します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\IndexRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function index(IndexRequest $request)
     {
         $todos = Todo::forUser($request->user()->id)
             ->ordered()
@@ -37,10 +43,10 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーの削除されたTodoアイテムとその詳細を取得します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\IndexRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function getDeletedTodos(Request $request)
+    public function getDeletedTodos(IndexRequest $request)
     {
         try {
             $userId = $request->user()->id;
@@ -102,11 +108,11 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーの削除されたTodoアイテムを復元します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\RestoreRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function restoreTodo(Request $request, $id)
+    public function restoreTodo(RestoreRequest $request, $id)
     {
         try {
             $todo = Todo::onlyTrashed()
@@ -137,12 +143,12 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーの削除されたTodoDetailを復元します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\RestoreRequest  $request
      * @param  int  $todoId
      * @param  int  $detailId
      * @return \Illuminate\Http\Response
      */
-    public function restoreTodoDetail(Request $request, $todoId, $detailId)
+    public function restoreTodoDetail(RestoreRequest $request, $todoId, $detailId)
     {
         try {
             $todo = Todo::where('user_id', $request->user()->id)->findOrFail($todoId);
@@ -194,36 +200,27 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーの指定されたTodoアイテムを表示します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\ShowRequest  $request
      * @param  \App\Models\Todo  $todo
      * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, Todo $todo)
+    public function show(ShowRequest $request, Todo $todo)
     {
-        // ユーザーの所有権を確認
-        if ($todo->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'アクセス権限がありません。'], 403);
-        }
-
         return response()->json($todo->load('todoDetails'));
     }
 
     /**
      * 認証されたユーザーの指定されたTodoアイテムを更新します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\UpdateRequest  $request
      * @param  \App\Models\Todo  $todo
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Todo $todo)
+    public function update(UpdateRequest $request, Todo $todo)
     {
-        // ユーザーの所有権を確認
-        if ($todo->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'アクセス権限がありません。'], 403);
-        }
-
         // Todoの更新
-        $todo->update($request->only(['title']));
+        $validatedData = $request->validated();
+        $todo->update($validatedData);
 
         return response()->json($todo->load('todoDetails'));
     }
@@ -231,17 +228,12 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーの指定されたTodoアイテムを削除します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\DestroyRequest  $request
      * @param  \App\Models\Todo  $todo
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Request $request, Todo $todo)
+    public function destroy(DestroyRequest $request, Todo $todo)
     {
-        // ユーザーの所有権を確認
-        if ($todo->user_id !== $request->user()->id) {
-            return response()->json(['message' => 'アクセス権限がありません。'], 403);
-        }
-
         $todo->delete();
         return response()->json(null, 204);
     }
@@ -249,21 +241,16 @@ class TodoController extends Controller
     /**
      * 認証されたユーザーのTodoアイテムの順序を更新します。
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Http\Requests\ToDo\UpdateOrderRequest  $request
      * @return \Illuminate\Http\Response
      */
-    public function updateOrder(Request $request)
+    public function updateOrder(UpdateOrderRequest $request)
     {
-        $request->validate([
-            'todos' => 'required|array',
-            'todos.*.id' => 'required|integer|exists:todos,id',
-            'todos.*.order' => 'required|integer',
-        ]);
-
+        $validatedData = $request->validated();
         $userId = $request->user()->id;
 
-        foreach ($request->todos as $todoData) {
-            // ユーザーの所有権を確認してから更新
+        foreach ($validatedData['todos'] as $todoData) {
+            // ユーザーの所有権を確認してから更新（Form Requestで既にチェック済み）
             Todo::where('id', $todoData['id'])
                 ->where('user_id', $userId)
                 ->update(['order' => $todoData['order']]);
