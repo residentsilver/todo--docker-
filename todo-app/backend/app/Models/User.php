@@ -52,4 +52,54 @@ class User extends Authenticatable
     {
         return $this->hasMany(Todo::class);
     }
+
+    /**
+     * サブスクリプションとの1対多のリレーションシップ
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * リマインド履歴との1対多のリレーションシップ
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function reminderHistories()
+    {
+        return $this->hasMany(ReminderHistory::class);
+    }
+
+    /**
+     * LINE連携トークンとの1対多のリレーションシップ
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function lineTokens()
+    {
+        return $this->hasMany(LineToken::class);
+    }
+
+    /**
+     * ユーザー設定との1対1のリレーションシップ
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function userSetting()
+    {
+        return $this->hasOne(UserSetting::class);
+    }
+
+    /**
+     * アクティブなLINE連携トークンを取得
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function activeLineToken()
+    {
+        return $this->hasOne(LineToken::class)->where('is_active', true)->latest();
+    }
 }

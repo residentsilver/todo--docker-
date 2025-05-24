@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\ToDoDetailController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ReminderController;
 
 // 認証不要のルート
 Route::post('/register', [AuthController::class, 'register']);
@@ -36,4 +37,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/todos-deleted', [TodoController::class, 'getDeletedTodos']);
     Route::post('/todos/{id}/restore', [TodoController::class, 'restoreTodo']);
     Route::post('/todos/{todoId}/details/{detailId}/restore', [TodoController::class, 'restoreTodoDetail']);
+
+    // リマインド機能のルート
+    Route::prefix('remind')->group(function () {
+        // サブスクリプション管理
+        Route::get('/subscriptions', [ReminderController::class, 'index']);
+        Route::post('/subscriptions', [ReminderController::class, 'store']);
+        Route::get('/subscriptions/{id}', [ReminderController::class, 'show']);
+        Route::put('/subscriptions/{id}', [ReminderController::class, 'update']);
+        Route::delete('/subscriptions/{id}', [ReminderController::class, 'destroy']);
+        
+        // メッセージプレビューとテスト送信
+        Route::get('/subscriptions/{id}/preview', [ReminderController::class, 'messagePreview']);
+        Route::post('/subscriptions/{id}/test', [ReminderController::class, 'sendTestReminder']);
+        
+        // リマインド履歴
+        Route::get('/histories', [ReminderController::class, 'reminderHistories']);
+        
+        // 統計・分析
+        Route::get('/monthly-totals', [ReminderController::class, 'monthlyTotals']);
+    });
 });

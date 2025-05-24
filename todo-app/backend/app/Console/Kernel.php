@@ -28,8 +28,23 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // 毎日深夜にリマインダーを送信
-        $schedule->command('reminders:send')->dailyAt('00:00');
+        // イベントリマインダーを毎日深夜に送信
+        $schedule->command('reminders:send --type=events')
+            ->dailyAt('00:00')
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // サブスクリプションリマインダーを毎時間チェック（より細かい制御のため）
+        $schedule->command('reminders:send --type=subscriptions')
+            ->hourly()
+            ->withoutOverlapping()
+            ->runInBackground();
+
+        // 全てのリマインダーを毎日朝9時に送信（バックアップとして）
+        $schedule->command('reminders:send --type=all')
+            ->dailyAt('09:00')
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**
