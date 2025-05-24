@@ -44,7 +44,7 @@ import { useSearch } from '../../contexts/SearchContext';
  */
 const Form = (props) => {
     const [timer, setTimer] = useState(null);
-    const [details, setDetails] = useState(props.toDo.todo_details);
+    const [details, setDetails] = useState(props.toDo.todo_details || []);
     const { updateToDoMutation } = useUpdateToDoMutateTask();
     const { updateToDoDetailOrderMutation } = useUpdateToDoDetailOrderMutateTask();
     
@@ -67,6 +67,11 @@ const Form = (props) => {
      * @returns {Array} 表示する詳細項目のリスト
      */
     const getDisplayDetails = () => {
+        // detailsが存在しない場合は空配列を返す
+        if (!details || !Array.isArray(details)) {
+            return [];
+        }
+
         if (!searchMode || !searchQuery) {
             // 通常モード：全ての詳細項目を表示
             return details;
@@ -154,7 +159,13 @@ const Form = (props) => {
         const { active, over } = event;
 
         if (active.id !== over.id) {
-            const displayDetails = getDisplayDetails();
+            const displayDetails = getDisplayDetails() || [];
+            
+            // displayDetailsが空の場合は処理を中断
+            if (displayDetails.length === 0) {
+                return;
+            }
+
             const oldIndex = displayDetails.findIndex(detail => detail.id === active.id);
             const newIndex = displayDetails.findIndex(detail => detail.id === over.id);
 
@@ -171,7 +182,7 @@ const Form = (props) => {
     const eventKeyDownTitle = (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
-            const displayDetails = getDisplayDetails();
+            const displayDetails = getDisplayDetails() || [];
             // detailsが存在し、少なくとも1つ要素がある場合
             if (displayDetails && displayDetails.length > 0) {
                 // 最初のdetailのテキストフィールドにフォーカスを移動
@@ -186,11 +197,11 @@ const Form = (props) => {
     };
 
     useEffect(() => {
-        setDetails(props.toDo.todo_details);
+        setDetails(props.toDo.todo_details || []);
     }, [props.toDo.todo_details]);
 
     // 表示する詳細項目を取得
-    const displayDetails = getDisplayDetails();
+    const displayDetails = getDisplayDetails() || [];
     const isSearchMode = searchMode && searchQuery;
     
     return (

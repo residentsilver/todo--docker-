@@ -37,7 +37,7 @@ class UpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'sometimes|required|string|max:255',
+            'title' => 'sometimes|nullable|string|max:255',
         ];
     }
 
@@ -49,7 +49,6 @@ class UpdateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'title.required' => 'タイトルは必須です。',
             'title.string' => 'タイトルは文字列である必要があります。',
             'title.max' => 'タイトルは255文字以内で入力してください。',
         ];
