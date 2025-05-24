@@ -18,7 +18,7 @@ class Navbar extends React.Component {
           </div>
           <div className="navbar-links">
             <Link to="/" className="nav-link">🏠 ホーム</Link>
-            <Link to="/youtube" className="nav-link">📝 Todo管理</Link>
+            <Link to="/todo" className="nav-link">📝 Todo管理</Link>
             <Link to="/aiTodo" className="nav-link">🤖 AI Todo</Link>
             <Link to="/todo-deleted" className="nav-link deleted-link">🗑️ 削除済み</Link>
           </div>

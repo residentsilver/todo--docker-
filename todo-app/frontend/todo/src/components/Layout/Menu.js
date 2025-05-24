@@ -112,7 +112,7 @@ const menuItems = [
   },
   {
     text: 'Todo管理',
-    path: '/youtube',
+    path: '/todo',
     icon: <PlayCircleOutlineIcon />,
     description: 'Todo管理画面'
   },

@@ -52,7 +52,7 @@ const SearchResults = () => {
      */
     const handleTodoClick = (todo) => {
         // Todo管理画面に遷移（必要に応じてTodoIDを含める）
-        navigate('/youtube', { state: { selectedTodo: todo } });
+        navigate('/todo', { state: { selectedTodo: todo } });
         clearSearch();
     };
 
