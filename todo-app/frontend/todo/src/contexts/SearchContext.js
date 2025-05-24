@@ -7,8 +7,6 @@ import { useCurrentToDoList } from '../components/hooks/ToDoList';
  * @description アプリケーション全体で検索状態を共有し、
  *              Todoアイテムの検索・フィルタリング機能を提供
  *              検索結果に詳細な一致情報を含める
- * @author システム開発者
- * @version 1.0
  */
 const SearchContext = createContext();
 

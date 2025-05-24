@@ -10,9 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * Todoモデルクラス
  * 
  * @description Todoアイテムを管理するEloquentモデル
- *              ソフトデリート機能と順序管理機能を提供
- * @author システム開発者
- * @version 1.2
+ *              ソフトデリート機能と順序管理機能、ユーザー関連付け機能を提供
  */
 class Todo extends Model
 {
@@ -25,6 +23,7 @@ class Todo extends Model
      */
     protected $fillable = [
         'title',
+        'user_id',
         'order',
     ];
 
@@ -53,6 +52,16 @@ class Todo extends Model
     }
 
     /**
+     * Userとの多対1のリレーションシップ
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    /**
      * TodoDetailとの1対多のリレーションシップ
      * 
      * @return \Illuminate\Database\Eloquent\Relations\HasMany
@@ -71,5 +80,17 @@ class Todo extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('order');
+    }
+
+    /**
+     * 特定のユーザーのTodoのみを取得するスコープ
+     * 
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param int $userId
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
     }
 }

@@ -28,8 +28,6 @@ import {
  * @description Todoアイテムの一覧表示と新規作成機能を提供
  *              検索機能と統合され、検索結果に応じた表示を行う
  *              Todoカードのドラッグアンドドロップによる順序変更機能を搭載
- * @author システム開発者
- * @version 1.3
  */
 function Home() {
     const { isLoading } = useGetToDoList();

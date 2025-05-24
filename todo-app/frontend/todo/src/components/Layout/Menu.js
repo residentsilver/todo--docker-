@@ -15,6 +15,8 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Divider from '@mui/material/Divider';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
@@ -23,7 +25,11 @@ import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloseIcon from '@mui/icons-material/Close';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useSearch } from '../../contexts/SearchContext';
+import { useAuth } from '../../contexts/AuthContext';
 import SearchResults from '../Search/SearchResults';
 
 /**
@@ -83,6 +89,17 @@ const ClearButton = styled(IconButton)(({ theme }) => ({
   },
 }));
 
+const LogoutButton = styled(Button)(({ theme }) => ({
+  borderRadius: theme.spacing(1),
+  margin: theme.spacing(1),
+  color: 'white',
+  borderColor: 'rgba(255, 255, 255, 0.3)',
+  '&:hover': {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderColor: 'rgba(255, 255, 255, 0.5)',
+  },
+}));
+
 /**
  * ナビゲーションメニューアイテムの定義
  */
@@ -119,8 +136,7 @@ const menuItems = [
  * @description Material-UIを使用したレスポンシブなヘッダーとサイドバーナビゲーション
  *              ハンバーガーメニューから各ページへの遷移が可能
  *              リアルタイム検索機能を搭載
- * @author システム開発者
- * @version 1.2
+ *              認証機能とログアウト機能を統合
  */
 export default function SearchAppBar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -134,6 +150,9 @@ export default function SearchAppBar() {
     clearSearch, 
     searchMode 
   } = useSearch();
+
+  // 認証機能の状態管理
+  const { user, logout } = useAuth();
 
   /**
    * ドロワーの開閉を切り替える関数
@@ -153,6 +172,19 @@ export default function SearchAppBar() {
   const handleNavigation = (path) => {
     navigate(path);
     setDrawerOpen(false); // ナビゲーション後にドロワーを閉じる
+  };
+
+  /**
+   * ログアウト処理
+   */
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setDrawerOpen(false);
+      navigate('/login');
+    } catch (error) {
+      console.error('ログアウトエラー:', error);
+    }
   };
 
   /**
@@ -193,6 +225,13 @@ export default function SearchAppBar() {
   };
 
   /**
+   * ユーザー名の最初の文字を取得（アバター用）
+   */
+  const getUserInitial = () => {
+    return user?.name ? user.name.charAt(0).toUpperCase() : 'U';
+  };
+
+  /**
    * ドロワーの内容を描画
    */
   const DrawerContent = () => (
@@ -201,7 +240,9 @@ export default function SearchAppBar() {
         width: 280,
         height: '100%',
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white'
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column'
       }}
       role="presentation"
     >
@@ -224,8 +265,64 @@ export default function SearchAppBar() {
         </IconButton>
       </Box>
 
+      {/* ユーザー情報セクション */}
+      {user && (
+        <Box sx={{ 
+          padding: 2,
+          borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+        }}>
+          <Box sx={{ 
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            mb: 1
+          }}>
+            <Avatar sx={{ 
+              bgcolor: 'rgba(255, 255, 255, 0.2)',
+              color: 'white',
+              width: 40,
+              height: 40
+            }}>
+              {getUserInitial()}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {user.name}
+              </Typography>
+              <Typography variant="caption" sx={{ 
+                color: 'rgba(255, 255, 255, 0.7)',
+                fontSize: '0.75rem'
+              }}>
+                {user.email}
+              </Typography>
+            </Box>
+          </Box>
+          
+          {/* プロフィール編集ボタン */}
+          <Button
+            fullWidth
+            size="small"
+            variant="outlined"
+            startIcon={<SettingsIcon />}
+            onClick={() => handleNavigation('/profile')}
+            sx={{
+              color: 'white',
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              fontSize: '0.75rem',
+              py: 0.5,
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+              },
+            }}
+          >
+            プロフィール編集
+          </Button>
+        </Box>
+      )}
+
       {/* メニューリスト */}
-      <List sx={{ paddingTop: 2 }}>
+      <List sx={{ paddingTop: 2, flex: 1 }}>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
@@ -258,12 +355,23 @@ export default function SearchAppBar() {
         ))}
       </List>
 
-      <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.12)', margin: '16px 0' }} />
+      <Divider sx={{ backgroundColor: 'rgba(255, 255, 255, 0.12)' }} />
+
+      {/* ログアウトボタン */}
+      <Box sx={{ padding: 2 }}>
+        <LogoutButton
+          fullWidth
+          variant="outlined"
+          startIcon={<LogoutIcon />}
+          onClick={handleLogout}
+        >
+          ログアウト
+        </LogoutButton>
+      </Box>
 
       {/* フッター情報 */}
       <Box sx={{ 
         padding: 2, 
-        marginTop: 'auto',
         textAlign: 'center'
       }}>
         <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
@@ -274,7 +382,7 @@ export default function SearchAppBar() {
           color: 'rgba(255, 255, 255, 0.5)',
           fontSize: '0.7rem'
         }}>
-          Version 1.0
+          Version 1.3
         </Typography>
       </Box>
     </Box>
@@ -315,6 +423,28 @@ export default function SearchAppBar() {
           >
             Todo App
           </Typography>
+
+          {/* ユーザー情報（ヘッダー右側） */}
+          {user && (
+            <Box sx={{ 
+              display: { xs: 'none', md: 'flex' },
+              alignItems: 'center',
+              gap: 1,
+              mr: 2
+            }}>
+              <Avatar sx={{ 
+                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                width: 32,
+                height: 32
+              }}>
+                {getUserInitial()}
+              </Avatar>
+              <Typography variant="body2" sx={{ color: 'white' }}>
+                {user.name}
+              </Typography>
+            </Box>
+          )}
           
           {/* 検索バー */}
           <Search>

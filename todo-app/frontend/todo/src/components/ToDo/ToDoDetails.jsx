@@ -106,7 +106,7 @@ const ToDoDetails = (props) => {
     }, [props.completed]);
 
     useEffect(() => {
-    console.log(props);
+    // console.log(props);
     }, []);
     
     return (

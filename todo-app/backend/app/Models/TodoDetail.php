@@ -11,8 +11,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * 
  * @description Todo詳細情報を管理するEloquentモデル
  *              ソフトデリート機能を提供
- * @author システム開発者
- * @version 1.1
  */
 class TodoDetail extends Model
 {

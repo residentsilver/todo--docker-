@@ -6,12 +6,32 @@ use Illuminate\Http\Request;
 use App\Models\TodoDetail; // モデルをインポート
 use App\Models\Todo; // 関連モデルを必要に応じてインポート
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class ToDoDetailController extends Controller
 {
+    /**
+     * 認証チェックのヘルパーメソッド
+     */
+    private function checkAuth()
+    {
+        if (!Auth::guard('sanctum')->check()) {
+            return response()->json(['message' => '認証が必要です。'], 401);
+        }
+        return null;
+    }
+
     public function index()
     {
-        $todoDetails = TodoDetail::all();
+        // 認証チェック
+        $authCheck = $this->checkAuth();
+        if ($authCheck) return $authCheck;
+
+        // 認証されたユーザーのTodoDetailのみを取得
+        $todoDetails = TodoDetail::whereHas('todo', function ($query) {
+            $query->where('user_id', Auth::id());
+        })->get();
+        
         return response()->json($todoDetails);
     }
 
@@ -23,7 +43,13 @@ class ToDoDetailController extends Controller
      */
     public function show($id)
     {
-        $todoDetail = TodoDetail::find($id);
+        // 認証チェック
+        $authCheck = $this->checkAuth();
+        if ($authCheck) return $authCheck;
+
+        $todoDetail = TodoDetail::whereHas('todo', function ($query) {
+            $query->where('user_id', Auth::id());
+        })->find($id);
 
         if (!$todoDetail) {
             return response()->json(['message' => 'TodoDetailが見つかりません。'], 404);
@@ -40,6 +66,9 @@ class ToDoDetailController extends Controller
      */
     public function store(Request $request)
     {
+        // 認証チェック
+        $authCheck = $this->checkAuth();
+        if ($authCheck) return $authCheck;
 
         $validatedData = $request->validate([
             'todo_id' => 'required|exists:todos,id',
@@ -47,8 +76,14 @@ class ToDoDetailController extends Controller
             'completed' => 'boolean',
         ]);
 
-        // Todoモデルを取得
-        $todo = Todo::findOrFail($validatedData['todo_id']);
+        // Todoが認証されたユーザーのものかチェック
+        $todo = Todo::where('id', $validatedData['todo_id'])
+                   ->where('user_id', Auth::id())
+                   ->first();
+
+        if (!$todo) {
+            return response()->json(['message' => '指定されたTodoが見つからないか、アクセス権限がありません。'], 403);
+        }
 
         // 現在の最大orderを取得
         $maxOrder = $todo->todoDetails()->max('order') ?? 0;
@@ -70,10 +105,16 @@ class ToDoDetailController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $todoDetail = TodoDetail::find($id);
+        // 認証チェック
+        $authCheck = $this->checkAuth();
+        if ($authCheck) return $authCheck;
+
+        $todoDetail = TodoDetail::whereHas('todo', function ($query) {
+            $query->where('user_id', Auth::id());
+        })->find($id);
 
         if (!$todoDetail) {
-            return response()->json(['message' => 'TodoDetailが見つかりません。'], 404);
+            return response()->json(['message' => 'TodoDetailが見つからないか、アクセス権限がありません。'], 404);
         }
 
         $validatedData = $request->validate([
@@ -81,6 +122,17 @@ class ToDoDetailController extends Controller
             'description' => 'nullable|string',
             'completed' => 'boolean',
         ]);
+
+        // todo_idが変更される場合、新しいTodoも認証されたユーザーのものかチェック
+        if (isset($validatedData['todo_id'])) {
+            $newTodo = Todo::where('id', $validatedData['todo_id'])
+                          ->where('user_id', Auth::id())
+                          ->first();
+            
+            if (!$newTodo) {
+                return response()->json(['message' => '指定されたTodoが見つからないか、アクセス権限がありません。'], 403);
+            }
+        }
 
         $todoDetail->update($validatedData);
 
@@ -95,10 +147,16 @@ class ToDoDetailController extends Controller
      */
     public function destroy($id)
     {
-        $todoDetail = TodoDetail::find($id);
+        // 認証チェック
+        $authCheck = $this->checkAuth();
+        if ($authCheck) return $authCheck;
+
+        $todoDetail = TodoDetail::whereHas('todo', function ($query) {
+            $query->where('user_id', Auth::id());
+        })->find($id);
 
         if (!$todoDetail) {
-            return response()->json(['message' => 'TodoDetailが見つかりません。'], 404);
+            return response()->json(['message' => 'TodoDetailが見つからないか、アクセス権限がありません。'], 404);
         }
 
         $todoDetail->delete();
@@ -108,10 +166,29 @@ class ToDoDetailController extends Controller
 
     public function updateOrder(Request $request, Todo $todo)
     {
+        // 認証チェック
+        $authCheck = $this->checkAuth();
+        if ($authCheck) return $authCheck;
+
+        // Todoが認証されたユーザーのものかチェック
+        if ($todo->user_id !== Auth::id()) {
+            return response()->json(['message' => 'アクセス権限がありません。'], 403);
+        }
+
         $request->validate([
             'order' => 'required|array',
             'order.*' => 'integer|exists:todo_details,id',
         ]);
+
+        // 指定されたTodoDetailが全て認証されたユーザーのTodoに属するかチェック
+        $todoDetailIds = $request->order;
+        $validTodoDetailCount = TodoDetail::whereIn('id', $todoDetailIds)
+            ->where('todo_id', $todo->id)
+            ->count();
+
+        if ($validTodoDetailCount !== count($todoDetailIds)) {
+            return response()->json(['message' => '無効なTodoDetailが含まれています。'], 400);
+        }
 
         // トランザクションを追加して、一連の更新を安全に行う
         DB::transaction(function () use ($request, $todo) {

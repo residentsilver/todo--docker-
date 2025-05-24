@@ -1,14 +1,32 @@
-import axios from "axios";
 import { useMutation, useQueryClient } from "react-query";
+import { useAuth } from '../../../contexts/AuthContext';
 
 /**
- * ToDo詳細の順序更新用カスタムフック
+ * 認証されたユーザーのToDo詳細の順序更新用カスタムフック
+ * 
+ * @description AuthContextを使用して認証付きでToDo詳細の順序を更新
  * @returns {Object} updateToDoDetailOrderMutation - 順序更新用のミューテーション
  */
 const useUpdateToDoDetailOrderMutateTask = () => {
     const queryClient = useQueryClient();
+    const { authenticatedRequest } = useAuth();
+
     const updateToDoDetailOrderMutation = useMutation(
-        ({ todoId, order }) => axios.put(`/api/todoDetails/${todoId}/order`, { order }),
+        /**
+         * 認証付きでToDo詳細の順序を更新する関数
+         * 
+         * @param {Object} params - パラメータオブジェクト
+         * @param {number} params.todoId - TodoのID
+         * @param {Array} params.order - 新しい順序の配列
+         * @returns {Promise} - APIレスポンス
+         */
+        async ({ todoId, order }) => {
+            const data = await authenticatedRequest(`/todoDetails/${todoId}/order`, {
+                method: 'PUT',
+                body: JSON.stringify({ order }),
+            });
+            return data;
+        },
         {
             onMutate: async ({ todoId, order }) => {
                 // キャッシュの更新を防ぐため、進行中のクエリをキャンセル
@@ -34,6 +52,8 @@ const useUpdateToDoDetailOrderMutateTask = () => {
                 return { previousToDoDetails };
             },
             onError: (err, variables, context) => {
+                console.error('ToDo詳細の順序更新に失敗しました:', err);
+                
                 // エラー時に以前の状態に戻す
                 if (context?.previousToDoDetails) {
                     queryClient.setQueryData(

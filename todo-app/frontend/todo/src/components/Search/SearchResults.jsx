@@ -29,8 +29,6 @@ import './SearchResults.css';
  *              検索クエリのハイライト機能を提供
  *              検索に一致するtodoDetailsのみを表示
  *              詳細な検索統計情報を表示
- * @author システム開発者
- * @version 1.0
  */
 const SearchResults = () => {
     const {

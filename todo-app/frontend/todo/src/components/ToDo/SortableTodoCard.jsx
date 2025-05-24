@@ -13,8 +13,6 @@ import Form from './Form';
  * @param {Object} props.toDo - Todoアイテムのデータ
  * @param {boolean} props.isSearchMode - 検索モードかどうか
  * @returns {JSX.Element} ドラッグ可能なTodoカード
- * @author システム開発者
- * @version 1.0
  */
 const SortableTodoCard = ({ toDo, isSearchMode }) => {
     const {

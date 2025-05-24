@@ -9,6 +9,8 @@ use Illuminate\Notifications\Notifiable;
 
 /**
  * ユーザーモデル
+ * 
+ * @description ユーザー認証とTodo管理機能を提供するEloquentモデル
  */
 class User extends Authenticatable
 {
@@ -17,7 +19,6 @@ class User extends Authenticatable
     /**
      * マスアサインメント可能な属性
      *
-     * @var array
      */
     protected $fillable = [
         'name',
@@ -28,7 +29,6 @@ class User extends Authenticatable
     /**
      * 隠す属性
      *
-     * @var array
      */
     protected $hidden = [
         'password',
@@ -38,9 +38,18 @@ class User extends Authenticatable
     /**
      * 属性の型キャスト
      *
-     * @var array
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * Todoとの1対多のリレーションシップ
+     * 
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
+     */
+    public function todos()
+    {
+        return $this->hasMany(Todo::class);
+    }
 }

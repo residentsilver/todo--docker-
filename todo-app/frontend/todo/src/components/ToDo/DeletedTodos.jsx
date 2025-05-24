@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import './DeletedTodos.css';
 
 /**
@@ -6,10 +7,11 @@ import './DeletedTodos.css';
  * 
  * @description ソフトデリートされたTodoアイテムとその詳細を表示し、
  *              復元機能を提供するコンポーネント。削除されたTodoDetailのみの場合も対応
- * @author システム開発者
- * @version 1.0
+ *              認証機能に対応
  */
 const DeletedTodos = () => {
+    const { authenticatedRequest, isAuthenticated } = useAuth();
+    
     // 状態管理
     const [deletedData, setDeletedData] = useState({
         deleted_todos: [],
@@ -23,12 +25,17 @@ const DeletedTodos = () => {
      * 削除されたTodoアイテムを取得する関数
      */
     const fetchDeletedTodos = async () => {
+        if (!isAuthenticated) {
+            setError('認証が必要です。');
+            setLoading(false);
+            return;
+        }
+
         try {
             setLoading(true);
             setError('');
             
-            const response = await fetch('/api/todos-deleted');
-            const data = await response.json();
+            const data = await authenticatedRequest('/todos-deleted');
             
             if (data.success) {
                 setDeletedData(data.data);
@@ -49,18 +56,18 @@ const DeletedTodos = () => {
      * @param {number} todoId - 復元するTodoのID
      */
     const restoreTodo = async (todoId) => {
+        if (!isAuthenticated) {
+            setError('認証が必要です。');
+            return;
+        }
+
         try {
             setRestoring(`todo-${todoId}`);
             setError('');
             
-            const response = await fetch(`/api/todos/${todoId}/restore`, {
+            const data = await authenticatedRequest(`/todos/${todoId}/restore`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
             });
-            
-            const data = await response.json();
             
             if (data.success) {
                 // 復元されたTodoを削除済みリストから除去
@@ -87,18 +94,18 @@ const DeletedTodos = () => {
      * @param {number} detailId - 復元するTodoDetailのID
      */
     const restoreTodoDetail = async (todoId, detailId) => {
+        if (!isAuthenticated) {
+            setError('認証が必要です。');
+            return;
+        }
+
         try {
             setRestoring(`detail-${detailId}`);
             setError('');
             
-            const response = await fetch(`/api/todos/${todoId}/details/${detailId}/restore`, {
+            const data = await authenticatedRequest(`/todos/${todoId}/details/${detailId}/restore`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
             });
-            
-            const data = await response.json();
             
             if (data.success) {
                 // 復元されたTodoDetailを更新
@@ -145,8 +152,21 @@ const DeletedTodos = () => {
 
     // コンポーネントマウント時に削除されたTodoを取得
     useEffect(() => {
-        fetchDeletedTodos();
-    }, []);
+        if (isAuthenticated) {
+            fetchDeletedTodos();
+        }
+    }, [isAuthenticated]);
+
+    // 認証されていない場合の表示
+    if (!isAuthenticated) {
+        return (
+            <div className="deleted-todos-container">
+                <div className="error-message">
+                    <p>このページを表示するにはログインが必要です。</p>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (

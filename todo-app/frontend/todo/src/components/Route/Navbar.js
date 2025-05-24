@@ -7,8 +7,6 @@ import './Navbar.css'
  * 
  * @description アプリケーションのメインナビゲーションを提供
  *              削除されたTodoページへのリンクも含む
- * @author システム開発者
- * @version 1.1
  */
 class Navbar extends React.Component {
   render(){

@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Schema;
  * 
  * @description このマイグレーションはtodo_detailsテーブルにdeleted_atカラムを追加して、
  *              ソフトデリート機能を有効にし、外部キー制約を調整します。
- * @author システム開発者
- * @version 1.0
  */
 return new class extends Migration
 {

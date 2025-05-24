@@ -1,22 +1,29 @@
-import axios from "axios";
 import { useMutation, useQueryClient } from "react-query";
+import { useAuth } from '../../../contexts/AuthContext';
 
 /**
- * ToDo詳細を削除するためのカスタムフック
+ * 認証されたユーザーのToDo詳細を削除するためのカスタムフック
  * 
+ * @description AuthContextを使用して認証付きでToDo詳細を削除
  * @returns {Object} - ミューテーションオブジェクト
  */
 const useDeleteToDoDetailMutateTask = () => {
     const queryClient = useQueryClient();
+    const { authenticatedRequest } = useAuth();
 
     const deleteToDoDetailMutation = useMutation(
         /**
-         * ToDo詳細を削除する関数
+         * 認証付きでToDo詳細を削除する関数
          * 
          * @param {Object} toDoDetail - 削除対象のToDo詳細アイテム
-         * @returns {Promise} - AxiosのDELETEリクエストのレスポンス
+         * @returns {Promise} - APIレスポンス
          */
-        (toDoDetail) => axios.delete(`/api/tododetails/${toDoDetail.id}`),
+        async (toDoDetail) => {
+            const data = await authenticatedRequest(`/tododetails/${toDoDetail.id}`, {
+                method: 'DELETE',
+            });
+            return data;
+        },
         {
             /**
              * ミューテーションが開始される前に呼び出される関数

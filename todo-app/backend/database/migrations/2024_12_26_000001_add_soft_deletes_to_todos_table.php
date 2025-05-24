@@ -9,8 +9,6 @@ use Illuminate\Support\Facades\Schema;
  * 
  * @description このマイグレーションはtodosテーブルにdeleted_atカラムを追加して、
  *              ソフトデリート機能を有効にします。
- * @author システム開発者
- * @version 1.0
  */
 return new class extends Migration
 {

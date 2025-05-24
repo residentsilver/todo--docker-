@@ -12,8 +12,6 @@ import Routing from './components/Route/Routing';
  * 
  * @description React アプリケーションのメインエントリーポイント
  *              ルーティングとレイアウトを初期化
- * @author システム開発者
- * @version 1.1
  */
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

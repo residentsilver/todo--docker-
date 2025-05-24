@@ -9,8 +9,6 @@ use App\Models\Todo;
  * 既存のTodoレコードに順序を設定するコマンド
  * 
  * @description orderカラムが0または未設定のTodoレコードに適切な順序を設定
- * @author システム開発者
- * @version 1.0
  */
 class UpdateTodoOrder extends Command
 {

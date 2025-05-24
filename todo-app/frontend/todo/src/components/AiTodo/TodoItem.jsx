@@ -1,11 +1,30 @@
 import React from 'react';
-import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 
+/**
+ * Todoアイテム表示コンポーネント
+ * 
+ * @description 個別のTodoアイテムを表示し、完了状態の切り替えと削除機能を提供
+ *              認証機能に対応
+ */
 const TodoItem = ({ todo, fetchTodos }) => {
+  const { authenticatedRequest, isAuthenticated } = useAuth();
+
+  /**
+   * Todo完了状態を切り替える関数
+   */
   const toggleCompleted = async () => {
+    if (!isAuthenticated) {
+      console.error('認証が必要です。');
+      return;
+    }
+
     try {
-      await axios.put(`/api/todos/${todo.id}`, {
-        completed: !todo.completed,
+      await authenticatedRequest(`/todos/${todo.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          completed: !todo.completed,
+        }),
       });
       fetchTodos();
     } catch (error) {
@@ -13,14 +32,29 @@ const TodoItem = ({ todo, fetchTodos }) => {
     }
   };
 
+  /**
+   * Todoを削除する関数
+   */
   const deleteTodo = async () => {
+    if (!isAuthenticated) {
+      console.error('認証が必要です。');
+      return;
+    }
+
     try {
-      await axios.delete(`/api/todos/${todo.id}`);
+      await authenticatedRequest(`/todos/${todo.id}`, {
+        method: 'DELETE',
+      });
       fetchTodos();
     } catch (error) {
       console.error('Todoを削除できませんでした。', error);
     }
   };
+
+  // 認証されていない場合は何も表示しない
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="todo-item">

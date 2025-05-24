@@ -1,24 +1,32 @@
-import axios from "axios";
 import { useMutation, useQueryClient } from "react-query";
+import { useAuth } from '../../../contexts/AuthContext';
 
 /**
- * ToDo詳細を追加するためのカスタムフック
+ * 認証されたユーザーのToDo詳細を追加するためのカスタムフック
  * 
+ * @description AuthContextを使用して認証付きでToDo詳細を追加
  * @returns {Object} - ミューテーションオブジェクト
  */
 const useStoreToDoDetailMutateTask = () => {
     const queryClient = useQueryClient();
+    const { authenticatedRequest } = useAuth();
 
     const storeToDoDetailMutation = useMutation(
         /**
-         * ToDo詳細を追加する関数
+         * 認証付きでToDo詳細を追加する関数
          * 
-         * @param {Object} toDoDetail - 追加するToDo詳細アイテム
-         * @returns {Promise} - AxiosのPOSTリクエストのレスポンス
+         * @param {Object} toDo - 追加するToDo詳細アイテム
+         * @returns {Promise} - APIレスポンス
          */
-        (toDo) => axios.post(`/api/tododetails`,{
-            todo_id: toDo.id,
-        }),
+        async (toDo) => {
+            const data = await authenticatedRequest('/tododetails', {
+                method: 'POST',
+                body: JSON.stringify({
+                    todo_id: toDo.id,
+                }),
+            });
+            return data;
+        },
             
         {
             /**

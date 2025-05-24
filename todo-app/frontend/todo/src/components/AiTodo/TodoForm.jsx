@@ -1,16 +1,33 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useAuth } from '../../contexts/AuthContext';
 import { Card, CardHeader, CardContent, List } from '@mui/material';
 
-
+/**
+ * Todo作成フォームコンポーネント
+ * 
+ * @description 認証されたユーザーが新しいTodoを作成するためのフォーム
+ */
 const TodoForm = ({ fetchTodos }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const { authenticatedRequest, isAuthenticated } = useAuth();
 
+  /**
+   * フォーム送信処理
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!isAuthenticated) {
+      console.error('認証が必要です。');
+      return;
+    }
+
     try {
-      await axios.post('/api/todos', { title, description });
+      await authenticatedRequest('/todos', {
+        method: 'POST',
+        body: JSON.stringify({ title, description }),
+      });
       setTitle('');
       setDescription('');
       fetchTodos();
@@ -19,11 +36,16 @@ const TodoForm = ({ fetchTodos }) => {
     }
   };
 
+  // 認証されていない場合は何も表示しない
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <>
     <form onSubmit={handleSubmit}>
       <Card>
-        <CardHeader title="test"></CardHeader>
+        <CardHeader title="新しいTodoを追加"></CardHeader>
           <CardContent>
             <List>
               

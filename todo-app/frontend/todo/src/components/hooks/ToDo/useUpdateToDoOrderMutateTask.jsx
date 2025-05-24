@@ -1,18 +1,17 @@
 import { useMutation, useQueryClient } from 'react-query';
-import axios from 'axios';
+import { useAuth } from '../../../contexts/AuthContext';
 
 /**
- * Todoの順序を更新するMutationフック
+ * 認証されたユーザーのTodoの順序を更新するMutationフック
  * 
- * @description Todoアイテムの表示順序を変更するためのAPI呼び出しを管理
- * @author システム開発者
- * @version 1.1
+ * @description AuthContextを使用して認証付きでTodoアイテムの表示順序を変更
  */
 const useUpdateToDoOrderMutateTask = () => {
     const queryClient = useQueryClient();
+    const { authenticatedRequest } = useAuth();
 
     /**
-     * Todoの順序を更新するAPI呼び出し
+     * 認証付きでTodoの順序を更新するAPI呼び出し
      * 
      * @param {Object} orderData - 順序データ
      * @param {Array} orderData.order - TodoのIDの配列（新しい順序）
@@ -27,27 +26,25 @@ const useUpdateToDoOrderMutateTask = () => {
             });
 
             const requestPayload = {
-                order: orderData.order
+                todos: orderData.order.map((id, index) => ({
+                    id: id,
+                    order: index + 1
+                }))
             };
 
             console.log('送信するリクエストペイロード:', requestPayload);
 
-            const response = await axios.put('/api/todos/order', requestPayload);
-            
-            console.log('Todo順序更新API呼び出し成功:', {
-                status: response.status,
-                data: response.data,
-                responseHeaders: response.headers
+            const data = await authenticatedRequest('/todos/order', {
+                method: 'PUT',
+                body: JSON.stringify(requestPayload),
             });
-
-            return response.data;
+            
+            console.log('Todo順序更新API呼び出し成功:', data);
+            return data;
         } catch (error) {
             console.error('Todo順序の更新に失敗しました:', {
                 error,
                 errorMessage: error.message,
-                errorResponse: error.response?.data,
-                errorStatus: error.response?.status,
-                errorHeaders: error.response?.headers,
                 requestData: orderData
             });
             throw error;
@@ -73,17 +70,12 @@ const useUpdateToDoOrderMutateTask = () => {
                 console.error('Todo順序の更新でエラーが発生しました:', {
                     error,
                     errorMessage: error.message,
-                    errorResponse: error.response?.data,
-                    errorStatus: error.response?.status,
                     originalVariables: variables
                 });
                 
                 // エラーの詳細をユーザーに表示
-                const errorMessage = error.response?.data?.message || 'Todo順序の更新に失敗しました。';
-                const errorDetails = error.response?.data?.errors ? 
-                    '\n詳細: ' + JSON.stringify(error.response.data.errors, null, 2) : '';
-                
-                alert(errorMessage + errorDetails);
+                const errorMessage = error.message || 'Todo順序の更新に失敗しました。';
+                alert(errorMessage);
             },
             onSettled: (data, error, variables) => {
                 console.log('Todo順序更新Mutation完了:', {
