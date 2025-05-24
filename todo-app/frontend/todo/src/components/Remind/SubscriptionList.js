@@ -353,7 +353,19 @@ const SubscriptionList = ({ onEdit, onCreate }) => {
     ['subscriptions', filters],
     () => api.fetchSubscriptions(filters),
     {
-      keepPreviousData: true
+      keepPreviousData: true,
+      // onSuccess: (data) => {
+      //   // デバッグ用ログ
+      //   console.log('🔍 API Response Debug:', {
+      //     fullResponse: data,
+      //     dataProperty: data?.data,
+      //     actualSubscriptions: data?.data?.data,
+      //     subscriptionsLength: data?.data?.data?.length || 0
+      //   });
+      // },
+      // onError: (error) => {
+      //   console.error('❌ API Error:', error);
+      // }
     }
   );
 
@@ -410,10 +422,31 @@ const SubscriptionList = ({ onEdit, onCreate }) => {
     }
   };
 
-  const subscriptions = subscriptionsData?.data?.data || [];
+  // データ取得の改善（複数のパターンに対応）
+  const subscriptions = subscriptionsData?.data?.data || subscriptionsData?.data || subscriptionsData || [];
+  
+  // // デバッグ用ログ（本番環境では削除推奨）
+  // console.log('📊 Subscriptions Debug:', {
+  //   subscriptionsData,
+  //   extractedSubscriptions: subscriptions,
+  //   length: subscriptions.length,
+  //   isLoading,
+  //   error: error?.message
+  // });
 
   return (
     <Box>
+      {/* デバッグ情報表示（開発用、本番では削除） */}
+      {/* {process.env.NODE_ENV === 'development' && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          <Typography variant="caption">
+            🐛 Debug: APIデータ={JSON.stringify(subscriptionsData?.data)} | 
+            サブスクリプション数={subscriptions.length} | 
+            読み込み中={isLoading.toString()}
+          </Typography>
+        </Alert>
+      )} */}
+
       {/* フィルター・ソート */}
       <Box sx={{ mb: 3 }}>
         <Grid container spacing={2} alignItems="center">
