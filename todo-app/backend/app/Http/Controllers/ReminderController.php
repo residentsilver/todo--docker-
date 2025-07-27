@@ -393,11 +393,23 @@ class ReminderController extends Controller
             $subscription = $user->subscriptions()->findOrFail($id);
             
             // ユーザーのアクティブなLINEトークンを確認
-            $lineToken = $user->activeLineToken;
+            $lineToken = $user->activeLineToken; // ← 既に正しい呼び出し方法です
             if (!$lineToken || !$lineToken->is_valid) {
+                \Log::warning('LINE連携エラー', [
+                    'user_id' => $user->id,
+                    'has_line_token' => $lineToken !== null,
+                    'is_valid' => $lineToken ? $lineToken->is_valid : null,
+                    'is_active' => $lineToken ? $lineToken->is_active : null,
+                    'token_expires_at' => $lineToken ? $lineToken->token_expires_at : null,
+                ]);
+                
                 return response()->json([
                     'status' => 'error',
-                    'message' => '有効なLINE連携が見つかりません。先にLINE連携を行ってください。'
+                    'message' => '有効なLINE連携が見つかりません。先にLINE連携を行ってください。',
+                    'debug' => [
+                        'has_line_token' => $lineToken !== null,
+                        'is_valid' => $lineToken ? $lineToken->is_valid : null,
+                    ]
                 ], 400);
             }
 
@@ -430,6 +442,13 @@ class ReminderController extends Controller
             }
 
         } catch (\Exception $e) {
+            \Log::error('テスト送信エラー', [
+                'user_id' => auth()->id(),
+                'subscription_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'status' => 'error',
                 'message' => 'テストリマインダーの送信に失敗しました',
@@ -686,6 +705,8 @@ class ReminderController extends Controller
                     'connected' => $lineToken !== null,
                     'connection_date' => $lineToken ? $lineToken->created_at : null,
                     'line_user_id' => $lineToken ? $lineToken->line_user_id : null,
+                    'line_display_name' => $lineToken ? $lineToken->line_display_name : null,
+                    'line_picture_url' => $lineToken ? $lineToken->line_picture_url : null,
                 ],
                 'message' => 'LINE連携状態を取得しました'
             ]);

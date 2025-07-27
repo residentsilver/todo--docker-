@@ -7,6 +7,7 @@ import LoginPage from '../../pages/LoginPage';
 import RegisterPage from '../../pages/RegisterPage';
 import ProfilePage from '../../pages/ProfilePage';
 import RemindPage from '../Remind/RemindPage';
+import LineCallback from '../../pages/LineCallback';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { SearchProvider } from '../../contexts/SearchContext';
 import { AuthProvider, useAuth } from '../../contexts/AuthContext';
@@ -178,6 +179,14 @@ function Routing() {
                                         <AuthenticatedLayout>
                                             <RemindPage />
                                         </AuthenticatedLayout>
+                                    </PrivateRoute>
+                                } 
+                            />
+                            <Route 
+                                path="/line-callback" 
+                                element={
+                                    <PrivateRoute>
+                                        <LineCallback />
                                     </PrivateRoute>
                                 } 
                             />

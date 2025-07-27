@@ -6,6 +6,7 @@ use App\Http\Controllers\TodoController;
 use App\Http\Controllers\ToDoDetailController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReminderController;
+use App\Http\Controllers\LineAuthController;
 
 // 認証不要のルート
 Route::post('/register', [AuthController::class, 'register']);
@@ -37,6 +38,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/todos-deleted', [TodoController::class, 'getDeletedTodos']);
     Route::post('/todos/{id}/restore', [TodoController::class, 'restoreTodo']);
     Route::post('/todos/{todoId}/details/{detailId}/restore', [TodoController::class, 'restoreTodoDetail']);
+
+    // LINE認証関連
+    Route::prefix('line')->group(function () {
+        Route::get('/auth-url', [LineAuthController::class, 'getAuthUrl']);
+        Route::get('/callback', [LineAuthController::class, 'handleCallback']);
+    });
 
     // リマインド機能のルート
     Route::prefix('remind')->group(function () {

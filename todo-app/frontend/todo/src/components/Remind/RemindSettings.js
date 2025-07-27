@@ -44,6 +44,7 @@ import {
 } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from 'react-query';
 import apiClient from '../../api/axios';
+import LineConnectionModal from './LineConnectionModal';
 
 /**
  * APIリクエスト関数
@@ -71,19 +72,22 @@ const api = {
 /**
  * LINE連携設定コンポーネント
  */
-const LineConnectionSettings = () => {
+const LineConnectionSettings = ({ onConnectionSuccess }) => {
   const [connectionStatus, setConnectionStatus] = useState({
     connected: false,
     displayName: '',
     pictureUrl: '',
     lastUsed: null
   });
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const queryClient = useQueryClient();
 
   // LINE連携状態を確認
   const {
     data: lineStatusData,
     isLoading: isLoadingLineStatus,
-    error: lineStatusError
+    error: lineStatusError,
+    refetch: refetchLineStatus
   } = useQuery(
     ['line-status'],
     () => api.checkLineConnection(),
@@ -100,86 +104,145 @@ const LineConnectionSettings = () => {
     }
   );
 
-  return (
-    <Card sx={{ borderRadius: 2 }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-          <LinkIcon sx={{ mr: 1, color: 'primary.main' }} />
-          LINE連携設定
-        </Typography>
+  // LINE連携解除ミューテーション
+  const disconnectMutation = useMutation(
+    () => apiClient.delete('/remind/line/disconnect'),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['line-status']);
+        setConnectionStatus({
+          connected: false,
+          displayName: '',
+          pictureUrl: '',
+          lastUsed: null
+        });
+      }
+    }
+  );
 
-        <Box sx={{ mt: 2 }}>
-          {isLoadingLineStatus ? (
-            <Alert severity="info">
-              LINE連携状態を確認中...
-            </Alert>
-          ) : lineStatusError ? (
-            <Alert severity="warning">
-              LINE連携状態を確認できませんでした。現在LINE連携は利用できません。
-            </Alert>
-          ) : connectionStatus.connected ? (
-            <Box>
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <CheckIcon sx={{ mr: 1 }} />
-                  LINE連携が有効です
-                </Box>
+  /**
+   * LINE連携成功時の処理
+   */
+  const handleConnectionSuccess = () => {
+    refetchLineStatus();
+    if (onConnectionSuccess) {
+      onConnectionSuccess();
+    }
+  };
+
+  /**
+   * LINE連携解除
+   */
+  const handleDisconnect = async () => {
+    if (window.confirm('LINE連携を解除しますか？')) {
+      try {
+        await disconnectMutation.mutateAsync();
+      } catch (error) {
+        console.error('LINE連携解除エラー:', error);
+      }
+    }
+  };
+
+  return (
+    <>
+      <Card sx={{ borderRadius: 2 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+            <LinkIcon sx={{ mr: 1, color: 'primary.main' }} />
+            LINE連携設定
+          </Typography>
+
+          <Box sx={{ mt: 2 }}>
+            {isLoadingLineStatus ? (
+              <Alert severity="info">
+                LINE連携状態を確認中...
               </Alert>
-              
-              <List>
-                <ListItem>
-                  <ListItemIcon>
-                    <CheckIcon color="success" />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary="アカウント名"
-                    secondary={connectionStatus.displayName || '取得中...'}
-                  />
-                </ListItem>
-                {connectionStatus.lastUsed && (
+            ) : lineStatusError ? (
+              <Alert severity="warning">
+                LINE連携状態を確認できませんでした。現在LINE連携は利用できません。
+              </Alert>
+            ) : connectionStatus.connected ? (
+              <Box>
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <CheckIcon sx={{ mr: 1 }} />
+                    LINE連携が有効です
+                  </Box>
+                </Alert>
+                
+                <List>
                   <ListItem>
                     <ListItemIcon>
-                      <ScheduleIcon color="primary" />
+                      <CheckIcon color="success" />
                     </ListItemIcon>
                     <ListItemText
-                      primary="最終利用"
-                      secondary={new Date(connectionStatus.lastUsed).toLocaleDateString('ja-JP')}
+                      primary="アカウント名"
+                      secondary={connectionStatus.line_display_name || connectionStatus.displayName || '取得中...'}
                     />
                   </ListItem>
-                )}
-              </List>
-            </Box>
-          ) : (
-            <Box>
-              <Alert severity="warning" sx={{ mb: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <ErrorIcon sx={{ mr: 1 }} />
-                  LINE連携が設定されていません
-                </Box>
-              </Alert>
-              
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                リマインド通知を受け取るには、LINEアカウントとの連携が必要です。
-                連携により、サブスクリプションの終了前に自動でLINEメッセージが送信されます。
-              </Typography>
+                  {(connectionStatus.lastUsed || connectionStatus.connection_date) && (
+                    <ListItem>
+                      <ListItemIcon>
+                        <ScheduleIcon color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="接続日時"
+                        secondary={new Date(connectionStatus.lastUsed || connectionStatus.connection_date).toLocaleDateString('ja-JP')}
+                      />
+                    </ListItem>
+                  )}
+                </List>
 
-              <Button
-                variant="contained"
-                startIcon={<LinkIcon />}
-                disabled
-                sx={{ mb: 1 }}
-              >
-                LINE連携を設定（準備中）
-              </Button>
-              
-              <Typography variant="caption" color="text.secondary" display="block">
-                ※ LINE連携機能は現在準備中です
-              </Typography>
-            </Box>
-          )}
-        </Box>
-      </CardContent>
-    </Card>
+                <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    onClick={handleDisconnect}
+                    disabled={disconnectMutation.isLoading}
+                  >
+                    {disconnectMutation.isLoading ? '解除中...' : 'LINE連携を解除'}
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <Box>
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <ErrorIcon sx={{ mr: 1 }} />
+                    LINE連携が設定されていません
+                  </Box>
+                </Alert>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  リマインド通知を受け取るには、LINEアカウントとの連携が必要です。
+                  連携により、サブスクリプションの終了前に自動でLINEメッセージが送信されます。
+                </Typography>
+
+                <Button
+                  variant="contained"
+                  startIcon={<LinkIcon />}
+                  onClick={() => setShowConnectionModal(true)}
+                  sx={{ mb: 1 }}
+                >
+                  LINE連携を設定
+                </Button>
+                
+                <Typography variant="caption" color="text.secondary" display="block">
+                  ※ 安全なLINE公式の認証システムを使用します
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* LINE連携モーダル */}
+      <LineConnectionModal
+        open={showConnectionModal}
+        onClose={() => setShowConnectionModal(false)}
+        onSuccess={handleConnectionSuccess}
+      />
+    </>
   );
 };
 
@@ -469,6 +532,15 @@ const RemindSettings = () => {
     }
   };
 
+  /**
+   * LINE連携成功時の処理
+   */
+  const handleLineConnectionSuccess = () => {
+    // LINE連携後に関連するクエリを更新
+    queryClient.invalidateQueries(['line-status']);
+    queryClient.invalidateQueries(['user-settings']);
+  };
+
   return (
     <Box>
       {/* ヘッダー */}
@@ -525,7 +597,7 @@ const RemindSettings = () => {
       <Grid container spacing={3}>
         {/* LINE連携設定 */}
         <Grid item xs={12}>
-          <LineConnectionSettings />
+          <LineConnectionSettings onConnectionSuccess={handleLineConnectionSuccess} />
         </Grid>
 
         {/* 設定アコーディオン */}
