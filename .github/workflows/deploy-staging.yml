@@ -1,0 +1,122 @@
+name: Deploy to Staging Server
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: todo-app/frontend/todo/package-lock.json
+          
+      - name: Install dependencies
+        run: |
+          cd todo-app/frontend/todo
+          npm ci --production=false
+          
+      - name: Build frontend
+        run: |
+          cd todo-app/frontend/todo
+          npm run build
+          
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            set -e  # エラーが発生したら即座に終了
+            
+            echo "=== Starting deployment process ==="
+            
+            # 作業ディレクトリに移動
+            cd /home/ncbrynch/sumaho-clinic.com/public_html/todo.sumaho-clinic.com/todo--docker-
+            echo "Changed to working directory: $(pwd)"
+            
+            # Gitの状態を確認
+            echo "=== Checking Git status ==="
+            git status
+            
+            # 最新のコードを取得
+            echo "=== Pulling latest code from staging branch ==="
+            git fetch origin staging
+            git reset --hard origin/staging
+            echo "Git pull completed successfully"
+            
+            # Node.jsの確認とインストール（レンタルサーバー対応）
+            echo "=== Checking Node.js installation ==="
+            if ! command -v node &> /dev/null; then
+                echo "Node.js not found. Installing Node.js using Node Version Manager (nvm)..."
+                
+                # NVMのインストール（ユーザーレベル）
+                curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+                export NVM_DIR="$HOME/.nvm"
+                [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+                [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+                
+                # Node.js 18のインストール
+                nvm install 18
+                nvm use 18
+                nvm alias default 18
+                
+                echo "Node.js installation completed"
+            else
+                echo "Node.js is already installed"
+                node --version
+                npm --version
+            fi
+            
+            # フロントエンドディレクトリに移動
+            cd todo-app/frontend/todo
+            echo "Changed to frontend directory: $(pwd)"
+            
+            # 依存関係をインストール
+            echo "=== Installing dependencies ==="
+            npm ci --production=false
+            
+            # フロントエンドをビルド
+            echo "=== Building frontend ==="
+            npm run build
+            
+            # ビルド結果を確認
+            echo "=== Checking build output ==="
+            ls -la build/
+            
+            # 公開ディレクトリにコピー
+            echo "=== Copying build files to public directory ==="
+            cp -r build/* /home/ncbrynch/sumaho-clinic.com/public_html/todo.sumaho-clinic.com/
+            
+            # 権限を設定（レンタルサーバー対応）
+            echo "=== Setting permissions ==="
+            chmod -R 755 /home/ncbrynch/sumaho-clinic.com/public_html/todo.sumaho-clinic.com/
+            
+            # デプロイ完了の確認
+            echo "=== Deployment verification ==="
+            ls -la /home/ncbrynch/sumaho-clinic.com/public_html/todo.sumaho-clinic.com/
+            
+            echo "=== Deployment completed successfully! ==="
+            
+      - name: Deployment notification
+        if: success()
+        run: |
+          echo "✅ Deployment to staging server completed successfully!"
+          echo "🌐 Your application should now be available at the configured URL"
+          
+      - name: Deployment failure notification
+        if: failure()
+        run: |
+          echo "❌ Deployment to staging server failed!"
+          echo "Please check the logs above for more details." 
