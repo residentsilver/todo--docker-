@@ -406,7 +406,7 @@ export const AuthProvider = ({ children }) => {
         try {
             // 認証が不要なエンドポイントをテスト（存在しない場合は404が返る）
             const testUrl = `${API_BASE_URL}/test-connection`;
-            // console.log('Testing API connection to:', testUrl);
+            console.log('Testing API connection to:', testUrl);
             
             const response = await fetch(testUrl, {
                 method: 'GET',
@@ -416,24 +416,23 @@ export const AuthProvider = ({ children }) => {
                 }
             });
             
-            // console.log('API Connection Test Result:', {
-            //     url: testUrl,
-            //     status: response.status,
-            //     statusText: response.statusText,
-            //     ok: response.ok
-            // });
+            console.log('API Connection Test Result:', {
+                url: testUrl,
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
             
             // 404は正常（エンドポイントが存在しないが、サーバーは動作している）
             if (response.status === 404) {
-                // console.log('✅ API server is running (404 is expected for test endpoint)');
+                console.log('✅ API server is running (404 is expected for test endpoint)');
             } else if (response.status === 500) {
-                // console.error('❌ API server has internal error');
+                console.error('❌ API server has internal error');
             } else {
-                // console.log('API server responded with status:', response.status);
+                console.log('API server responded with status:', response.status);
             }
         } catch (error) {
-            // console.error('❌ API Connection Test Failed:', error.message);
-            // console.error('Please ensure Laravel server is running on http://127.0.0.1:8000');
+            console.error('❌ API Connection Test Failed:', error.message);
         }
     };
 
