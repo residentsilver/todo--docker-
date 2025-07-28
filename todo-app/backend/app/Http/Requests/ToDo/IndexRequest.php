@@ -8,14 +8,14 @@ use Illuminate\Support\Facades\Auth;
 class IndexRequest extends FormRequest
 {
     /**
-     * 認証チェック - ユーザーがログインしているかを確認
+     * 認証チェック - ミドルウェアレベルでauth:sanctumにより認証済み
      *
      * @return bool
      */
     public function authorize(): bool
     {
-        // Sanctumミドルウェアで既に認証されているため、デフォルトガードを使用
-        return Auth::check();
+        // ルートレベルでauth:sanctumミドルウェアにより認証済み
+        return true;
     }
 
     /**
