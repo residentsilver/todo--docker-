@@ -21,6 +21,27 @@ Route::get('/test-connection', function () {
     ]);
 });
 
+// デバッグ用エンドポイント（本番環境では削除すること）
+Route::get('/debug-auth', function () {
+    try {
+        return response()->json([
+            'status' => 'success',
+            'auth_default_guard' => config('auth.defaults.guard'),
+            'auth_guards' => array_keys(config('auth.guards')),
+            'sanctum_guard' => config('sanctum.guard'),
+            'user_model' => config('auth.providers.users.model'),
+            'app_env' => app()->environment(),
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile()
+        ], 500);
+    }
+});
+
 // 認証が必要なルート
 Route::middleware('auth:sanctum')->group(function () {
     // ユーザー情報
@@ -75,4 +96,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/line/connect', [ReminderController::class, 'connectLine']);
         Route::delete('/line/disconnect', [ReminderController::class, 'disconnectLine']);
     });
+});
+
+// 一時的なテスト用エンドポイント（認証なし）
+Route::get('/test-todos', function () {
+    try {
+        $todos = \App\Models\Todo::with('todoDetails')->take(5)->get();
+        return response()->json([
+            'status' => 'success',
+            'count' => $todos->count(),
+            'sample' => $todos->map(function($todo) {
+                return [
+                    'id' => $todo->id,
+                    'title' => $todo->title,
+                    'user_id' => $todo->user_id
+                ];
+            })
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
 });
