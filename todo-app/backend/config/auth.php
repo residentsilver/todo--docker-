@@ -14,7 +14,7 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
+        'guard' => env('AUTH_GUARD', 'sanctum'), // webからsanctumに変更
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
 
