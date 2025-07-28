@@ -17,7 +17,7 @@ class UpdateOrderRequest extends FormRequest
     public function authorize(): bool
     {
         // Sanctum認証チェック
-        if (!Auth::guard('sanctum')->check()) {
+        if (!Auth::check()) {
             return false;
         }
 
