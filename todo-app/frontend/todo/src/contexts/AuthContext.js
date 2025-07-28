@@ -33,8 +33,10 @@ export const AuthProvider = ({ children }) => {
     const [token, setToken] = useState(localStorage.getItem('auth_token'));
     const [loading, setLoading] = useState(true);
 
-    // API_BASE_URLを直接設定（環境変数が設定されていない場合のフォールバック）
-    const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api';
+    // API_BASE_URLを設定（axios.jsと統一）
+    const API_BASE_URL = process.env.NODE_ENV === 'production' 
+        ? '/api' 
+        : (process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api');
     
     // デバッグ用：API_BASE_URLをコンソールに出力
     // console.log('AuthContext initialized with API_BASE_URL:', API_BASE_URL);
