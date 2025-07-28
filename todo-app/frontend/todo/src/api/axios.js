@@ -9,7 +9,7 @@ import axios from 'axios';
 
 // APIベースURL（Docker環境では backend:80 を使用）
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-    ? '/api' 
+    ? 'https://todo.sumaho-clinic.com/api' 
     : 'http://localhost:8000/api';
 
 // Axiosインスタンスを作成
