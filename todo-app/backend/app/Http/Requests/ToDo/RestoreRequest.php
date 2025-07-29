@@ -16,7 +16,7 @@ class RestoreRequest extends FormRequest
     public function authorize(): bool
     {
         // Sanctum認証チェック
-        if (!Auth::check()) {
+        if (!Auth::guard('sanctum')->check()) {
             return false;
         }
 

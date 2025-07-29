@@ -39,9 +39,9 @@ export const AuthProvider = ({ children }) => {
         : (process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api');
     
     // デバッグ用：API_BASE_URLをコンソールに出力
-    console.log('AuthContext initialized with API_BASE_URL:', API_BASE_URL);
-    console.log('Environment REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
-    console.log('Current window location:', window.location.href);
+    // console.log('AuthContext initialized with API_BASE_URL:', API_BASE_URL);
+    // console.log('Environment REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+    // console.log('Current window location:', window.location.href);
 
     /**
      * APIリクエストヘルパー関数
@@ -66,16 +66,15 @@ export const AuthProvider = ({ children }) => {
         };
 
         // デバッグ情報をコンソールに出力
-        console.log('API Request Details:', {
-            url,
-            method: config.method || 'GET',
-            API_BASE_URL,
-            endpoint,
-            hasToken: !!token,
-            tokenPrefix: token ? token.substring(0, 10) + '...' : 'None',
-            headers: config.headers,
-            body: options.body ? 'Present' : 'None'
-        });
+        // console.log('API Request Details:', {
+        //     url,
+        //     method: config.method || 'GET',
+        //     API_BASE_URL,
+        //     endpoint,
+        //     hasToken: !!token,
+        //     headers: config.headers,
+        //     body: options.body ? 'Present' : 'None'
+        // });
 
         try {
             const response = await fetch(url, config);
