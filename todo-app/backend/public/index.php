@@ -1,5 +1,9 @@
 <?php
 
+ini_set('display_errors', 1); // エラーを画面に表示する
+error_reporting(E_ALL);   // 全てのレベルのエラーを報告する
+
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
