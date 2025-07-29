@@ -8,14 +8,13 @@ use Illuminate\Support\Facades\Auth;
 class MeRequest extends FormRequest
 {
     /**
-     * 認証チェック - ミドルウェアレベルでauth:sanctumにより認証済み
+     * 認証チェック - ユーザー情報取得には認証が必要
      *
      * @return bool
      */
     public function authorize(): bool
     {
-        // ルートレベルでauth:sanctumミドルウェアにより認証済み
-        return true;
+        return Auth::check();
     }
 
     /**
