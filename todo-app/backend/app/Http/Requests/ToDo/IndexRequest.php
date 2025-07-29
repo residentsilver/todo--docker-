@@ -14,8 +14,7 @@ class IndexRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Sanctumミドルウェアで既に認証されているため、デフォルトガードを使用
-        return Auth::check();
+        return Auth::guard('sanctum')->check();
     }
 
     /**
