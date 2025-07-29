@@ -80,59 +80,69 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await fetch(url, config);
             
-            console.log('API Response Details:', {
-                url,
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok,
-                headers: Object.fromEntries(response.headers.entries())
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('API Error Response:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    body: errorText
-                });
+            // レスポンス情報をログ出力
+            // console.log('API Response Details:', {
+            //     url,
+            //     actualUrl: response.url, // 実際にリクエストされたURL
+            //     status: response.status,
+            //     statusText: response.statusText,
+            //     contentType: response.headers.get('content-type'),
+            //     redirected: response.redirected
+            // });
+            
+            // リダイレクトが発生した場合の警告
+            // if (response.redirected) {
+            //     console.warn('⚠️ Request was redirected:', {
+            //         originalUrl: url,
+            //         finalUrl: response.url
+            //     });
+            // }
+            
+            // レスポンスのContent-Typeを確認
+            const contentType = response.headers.get('content-type');
+            
+            // HTMLレスポンスの場合（404エラーなど）
+            if (contentType && contentType.includes('text/html')) {
+                // console.error('HTMLレスポンスを受信:', {
+                //     url,
+                //     actualUrl: response.url,
+                //     status: response.status,
+                //     statusText: response.statusText
+                // });
                 
-                let errorMessage = 'APIエラーが発生しました。';
-                
-                try {
-                    const errorData = JSON.parse(errorText);
-                    if (errorData.message) {
-                        errorMessage = errorData.message;
-                    } else if (errorData.errors) {
-                        // バリデーションエラーの場合
-                        const errors = Object.values(errorData.errors).flat();
-                        errorMessage = errors.join('\n');
-                    }
-                } catch (parseError) {
-                    console.error('Error parsing error response:', parseError);
-                    errorMessage = `HTTPエラー ${response.status}: ${response.statusText}`;
-                }
-
-                if (response.status === 401) {
-                    errorMessage = 'Unauthenticated.';
-                } else if (response.status === 404) {
-                    errorMessage = 'APIエンドポイントが見つかりません。';
+                if (response.status === 404) {
+                    throw new Error('APIエンドポイントが見つかりません。サーバーの設定を確認してください。');
+                } else if (response.status === 405) {
+                    throw new Error(`HTTPメソッドが許可されていません。URL: ${response.url}, Method: ${config.method || 'GET'}`);
                 } else if (response.status >= 500) {
-                    errorMessage = 'サーバーエラーが発生しました。しばらく時間をおいて再度お試しください。';
+                    throw new Error('サーバーエラーが発生しました。しばらく時間をおいて再度お試しください。');
+                } else {
+                    throw new Error('予期しないエラーが発生しました。');
                 }
-
-                const error = new Error(errorMessage);
-                error.status = response.status;
-                throw error;
             }
 
-            const responseData = await response.json();
-            console.log('API Success Response:', {
-                url,
-                status: response.status,
-                dataKeys: Object.keys(responseData)
-            });
+            // JSONレスポンスを期待
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                // console.error('JSON解析エラー:', jsonError);
+                // console.error('Response text:', await response.text());
+                throw new Error('サーバーからの応答を解析できませんでした。');
+            }
 
-            return responseData;
+            if (!response.ok) {
+                // Laravel バリデーションエラーの処理
+                if (response.status === 422 && data.errors) {
+                    const errorMessages = Object.values(data.errors).flat();
+                    throw new Error(errorMessages.join('\n'));
+                }
+                
+                // その他のAPIエラー
+                throw new Error(data.message || `HTTPエラー: ${response.status}`);
+            }
+
+            return data;
         } catch (error) {
             // console.error('API Request Error Details:', {
             //     url,
@@ -194,34 +204,57 @@ export const AuthProvider = ({ children }) => {
                 password: credentials.password,
             };
 
-            console.log('Login attempt with data:', { login: loginData.login });
-
             const data = await apiRequest('/login', {
                 method: 'POST',
                 body: JSON.stringify(loginData),
-            });
-
-            console.log('Login response received:', {
-                hasAccessToken: !!data.access_token,
-                tokenPrefix: data.access_token ? data.access_token.substring(0, 10) + '...' : 'None',
-                hasUser: !!data.user,
-                userId: data.user?.id,
-                userName: data.user?.name
             });
 
             setToken(data.access_token);
             setUser(data.user);
             localStorage.setItem('auth_token', data.access_token);
 
-            console.log('Login successful, token stored in localStorage');
-
             return data;
         } catch (error) {
-            console.error('Login failed:', {
-                message: error.message,
-                status: error.status,
-                response: error.response
-            });
+            // console.error('ログインエラー:', error);
+            
+            // バリデーションエラーの場合、フィールド固有のエラーを含むオブジェクトを投げる
+            if (error.message.includes('\n')) {
+                // 複数のバリデーションエラーがある場合
+                const errorLines = error.message.split('\n');
+                const fieldErrors = {};
+                let hasLoginError = false;
+                
+                errorLines.forEach(line => {
+                    if (line.includes('メールアドレスまたはユーザー名')) {
+                        fieldErrors.email = line;
+                    } else if (line.includes('パスワードを入力')) {
+                        fieldErrors.password = line;
+                    } else if (line.includes('認証情報が一致しません')) {
+                        hasLoginError = true;
+                    }
+                });
+                
+                if (hasLoginError) {
+                    throw new Error('メールアドレス（またはユーザー名）またはパスワードが正しくありません。');
+                } else if (Object.keys(fieldErrors).length > 0) {
+                    const validationError = new Error('バリデーションエラー');
+                    validationError.fieldErrors = fieldErrors;
+                    throw validationError;
+                }
+            }
+            
+            // より具体的なエラーメッセージを提供
+            if (error.message.includes('認証情報が一致しません')) {
+                throw new Error('メールアドレス（またはユーザー名）またはパスワードが正しくありません。');
+            } else if (error.message.includes('APIエンドポイントが見つかりません')) {
+                throw new Error('ログイン機能が利用できません。管理者にお問い合わせください。');
+            } else if (error.message.includes('ネットワークエラー')) {
+                throw new Error('インターネット接続を確認してから再度お試しください。');
+            } else if (error.message.includes('サーバーエラー')) {
+                throw new Error('サーバーに問題が発生しています。しばらく時間をおいて再度お試しください。');
+            }
+            
+            // その他のエラーはそのまま再スロー
             throw error;
         }
     };
