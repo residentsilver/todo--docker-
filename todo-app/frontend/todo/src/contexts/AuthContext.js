@@ -34,14 +34,8 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     // API_BASE_URLを設定（axios.jsと統一）
-    const API_BASE_URL = process.env.NODE_ENV === 'production' 
-        ? 'https://todo.sumaho-clinic.com/api' 
-        : process.env.NODE_ENV === 'railway' 
-        ? 'https://glorious-comfort-staging.up.railway.app/api' 
-        : process.env.NODE_ENV === 'render' 
-        ? 'https://todo-docker-tuy5.onrender.com/api'    
-        : (process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api');
-    
+    const API_BASE_URL = process.env.REACT_APP_API_URL;
+
     // デバッグ用：API_BASE_URLをコンソールに出力
     // console.log('AuthContext initialized with API_BASE_URL:', API_BASE_URL);
     // console.log('Environment REACT_APP_API_URL:', process.env.REACT_APP_API_URL);

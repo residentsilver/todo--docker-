@@ -7,14 +7,15 @@ import axios from 'axios';
  *              認証トークンの自動付与、エラーハンドリングを含む
  */
 
-// APIベースURL（Docker環境では backend:80 を使用）
-const API_BASE_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://todo.sumaho-clinic.com/api' 
-    : process.env.NODE_ENV === 'railway' 
-    ? 'https://glorious-comfort-staging.up.railway.app/api' 
-    : process.env.NODE_ENV === 'render' 
-    ? 'https://todo-docker-tuy5.onrender.com/api'    
-    : 'http://localhost:8000/api';
+    // API_BASE_URLを設定（axios.jsと統一）
+    const API_BASE_URL = process.env.REACT_APP_API_URL;
+
+// デバッグ用（本番環境では削除）
+console.log('Environment:', {
+    REACT_APP_DEPLOY_ENV: process.env.REACT_APP_DEPLOY_ENV,
+    NODE_ENV: process.env.NODE_ENV,
+    API_BASE_URL: API_BASE_URL
+});
 
 // Axiosインスタンスを作成
 const apiClient = axios.create({
