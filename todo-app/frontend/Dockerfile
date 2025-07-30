@@ -16,4 +16,4 @@ COPY . .
 EXPOSE 3000
 
 # サーバーの起動
-CMD ["npm", "start"]
+CMD ["npm", "start" , "build", "serve"]
