@@ -10,10 +10,16 @@ COPY ./todo/package.json ./todo/package-lock.json ./
 RUN npm install
 
 # アプリケーションコードのコピー
-COPY . .
+COPY ./todo ./
+
+# ビルドの実行
+RUN npm run build
+
+# serve パッケージのインストール（プロダクション用）
+RUN npm install -g serve
 
 # ポート3000を開放
 EXPOSE 3000
 
-# サーバーの起動
-CMD ["npm", "start" , "build", "serve"]
+# ビルドされたアプリケーションの提供
+CMD ["npm", "run", "serve"]
