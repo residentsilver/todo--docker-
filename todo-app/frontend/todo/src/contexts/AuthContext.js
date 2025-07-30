@@ -36,6 +36,10 @@ export const AuthProvider = ({ children }) => {
     // API_BASE_URLを設定（axios.jsと統一）
     const API_BASE_URL = process.env.NODE_ENV === 'production' 
         ? 'https://todo.sumaho-clinic.com/api' 
+        : process.env.NODE_ENV === 'railway' 
+        ? 'https://glorious-comfort-staging.up.railway.app/api' 
+        : process.env.NODE_ENV === 'render' 
+        ? 'https://todo-docker-tuy5.onrender.com/api'    
         : (process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api');
     
     // デバッグ用：API_BASE_URLをコンソールに出力

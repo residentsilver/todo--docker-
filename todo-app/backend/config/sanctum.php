@@ -17,7 +17,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s%s',
-        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,todo.sumaho-clinic.com',
+        'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1,todo.sumaho-clinic.com,glorious-comfort-staging.up.railway.app,todo-docker-tuy5.onrender.com',
         Sanctum::currentApplicationUrlWithPort() ? ',' : '',
         Sanctum::currentApplicationUrlWithPort()
     ))),
