@@ -415,14 +415,59 @@ class ReminderController extends Controller
 
             $daysBefore = $request->get('days_before', 7);
             
+            // 既存のリマインド履歴を確認
+            $existingReminder = ReminderHistory::where('subscription_id', $subscription->id)
+                ->where('days_before', $daysBefore)
+                ->first();
+            
+            if ($existingReminder) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => '同じサブスクリプションの同じ日数前通知が既に存在します',
+                    'details' => [
+                        'subscription_name' => $subscription->service_name,
+                        'subscription_id' => $subscription->id,
+                        'days_before' => $daysBefore,
+                        'existing_reminder' => [
+                            'id' => $existingReminder->id,
+                            'status' => $existingReminder->status,
+                            'scheduled_at' => $existingReminder->scheduled_at,
+                            'sent_at' => $existingReminder->sent_at,
+                            'created_at' => $existingReminder->created_at,
+                        ]
+                    ],
+                    'suggestion' => '既存のリマインドを削除してから再実行するか、異なる日数を指定してください。'
+                ], 409); // 409 Conflict
+            }
+            
             // テスト用のリマインド履歴を作成
-            $testReminder = ReminderHistory::create([
-                'subscription_id' => $subscription->id,
-                'user_id' => $user->id,
-                'days_before' => $daysBefore,
-                'scheduled_at' => Carbon::now(),
-                'status' => 'pending',
-            ]);
+            try {
+                $testReminder = ReminderHistory::create([
+                    'subscription_id' => $subscription->id,
+                    'user_id' => $user->id,
+                    'days_before' => $daysBefore,
+                    'scheduled_at' => Carbon::now(),
+                    'status' => 'pending',
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // unique制約違反の場合
+                if ($e->errorInfo[1] == 1062) { // MySQL duplicate entry error
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'データベース制約違反: 同じリマインド設定が既に存在します',
+                        'details' => [
+                            'subscription_name' => $subscription->service_name,
+                            'subscription_id' => $subscription->id,
+                            'days_before' => $daysBefore,
+                            'constraint' => 'unique_subscription_reminder',
+                            'database_error' => $e->getMessage()
+                        ],
+                        'suggestion' => '既存のリマインドを確認してください。'
+                    ], 409);
+                }
+                // その他のデータベースエラー
+                throw $e;
+            }
 
             $lineMessagingService = app(\App\Services\LineMessagingService::class);
             $success = $lineMessagingService->sendReminderMessage($testReminder);
