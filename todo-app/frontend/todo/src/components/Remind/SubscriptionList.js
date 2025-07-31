@@ -418,8 +418,30 @@ const SubscriptionList = ({ onEdit, onCreate }) => {
       alert('テストリマインダーを送信しました');
     } catch (error) {
       console.error('テスト送信エラー:', error);
-      alert('テスト送信に失敗しました');
-    }
+        if (error.response?.status === 409) {
+          // 既存のリマインド履歴情報を取得
+          const errorData = error.response.data;
+          const existingReminder = errorData.details?.existing_reminder;
+          
+          let message = 'すでに通知済みです';
+          
+          // 詳細情報がある場合
+          if (existingReminder) {
+            const statusText = existingReminder.status === 'sent' ? '送信済み' : 
+                              existingReminder.status === 'pending' ? '送信予定' : 
+                              existingReminder.status;
+            message = `すでに通知済みです（${statusText}）`;
+            
+            // 送信日時も表示
+            if (existingReminder.sent_at) {
+              const sentDate = new Date(existingReminder.sent_at).toLocaleString('ja-JP');
+              message += `\n送信日時: ${sentDate}`;
+            }
+          }
+          
+          alert(message);
+        }
+      }
   };
 
   // データ取得の改善（複数のパターンに対応）
