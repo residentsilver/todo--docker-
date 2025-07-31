@@ -393,7 +393,7 @@ class ReminderController extends Controller
             $subscription = $user->subscriptions()->findOrFail($id);
             
             // ユーザーのアクティブなLINEトークンを確認
-            $lineToken = $user->activeLineToken; // ← 既に正しい呼び出し方法です
+            $lineToken = $user->activeLineToken;
             if (!$lineToken || !$lineToken->is_valid) {
                 \Log::warning('LINE連携エラー', [
                     'user_id' => $user->id,
@@ -437,7 +437,7 @@ class ReminderController extends Controller
                         ]
                     ],
                     'suggestion' => '既存のリマインドを削除してから再実行するか、異なる日数を指定してください。'
-                ], 409); // 409 Conflict
+                ], 409);
             }
             
             // テスト用のリマインド履歴を作成
@@ -465,7 +465,6 @@ class ReminderController extends Controller
                         'suggestion' => '既存のリマインドを確認してください。'
                     ], 409);
                 }
-                // その他のデータベースエラー
                 throw $e;
             }
 

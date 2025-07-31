@@ -36,7 +36,8 @@ class Kernel extends ConsoleKernel
 
         // サブスクリプションリマインダーを毎時間チェック（より細かい制御のため）
         $schedule->command('reminders:send --type=subscriptions')
-            ->hourly()
+            ->dailyAt('09:00')
+            ->timezone('Asia/Tokyo')
             ->withoutOverlapping()
             ->runInBackground();
 
