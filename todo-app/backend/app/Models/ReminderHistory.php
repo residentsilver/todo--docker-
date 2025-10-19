@@ -115,6 +115,16 @@ class ReminderHistory extends Model
     }
 
     /**
+     * 特定のサブスクリプション、日数前、ユーザーの組み合わせでリマインドを検索するスコープ
+     */
+    public function scopeForSubscriptionUser($query, int $subscriptionId, int $daysBefore, int $userId)
+    {
+        return $query->where('subscription_id', $subscriptionId)
+                    ->where('days_before', $daysBefore)
+                    ->where('user_id', $userId);
+    }
+
+    /**
      * 未読のリマインドのスコープ
      */
     public function scopeUnread($query)

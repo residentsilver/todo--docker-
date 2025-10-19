@@ -66,6 +66,7 @@ class LineMessagingService
                 $reminderHistory->update([
                     'status' => 'sent',
                     'sent_at' => Carbon::now(),
+                    'scheduled_at' => Carbon::now(),
                     'message' => $message,
                     'line_message_id' => $response['message_id'] ?? null,
                 ]);
@@ -132,18 +133,23 @@ class LineMessagingService
                 ];
             }
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->channelAccessToken,
-                'Content-Type' => 'application/json',
-            ])->post(self::LINE_API_BASE_URL . '/message/push', [
-                'to' => $lineUserId,
-                'messages' => [
-                    [
-                        'type' => 'text',
-                        'text' => $message,
+            // HTTP設定を取得
+            $httpOptions = config('services.line.http_options', []);
+            
+            $response = Http::withOptions($httpOptions)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->channelAccessToken,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post(self::LINE_API_BASE_URL . '/message/push', [
+                    'to' => $lineUserId,
+                    'messages' => [
+                        [
+                            'type' => 'text',
+                            'text' => $message,
+                        ]
                     ]
-                ]
-            ]);
+                ]);
 
             if ($response->successful()) {
                 return [
@@ -236,9 +242,14 @@ class LineMessagingService
                 return null;
             }
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $this->channelAccessToken,
-            ])->get(self::LINE_API_BASE_URL . '/profile/' . $lineUserId);
+            // HTTP設定を取得
+            $httpOptions = config('services.line.http_options', []);
+
+            $response = Http::withOptions($httpOptions)
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->channelAccessToken,
+                ])
+                ->get(self::LINE_API_BASE_URL . '/profile/' . $lineUserId);
 
             if ($response->successful()) {
                 return $response->json();
