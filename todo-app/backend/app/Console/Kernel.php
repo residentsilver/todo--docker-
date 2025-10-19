@@ -5,6 +5,8 @@ namespace App\Console;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use App\Console\Commands\SendReminders;
+use App\Console\Commands\TestSubscriptionReminders;
+use App\Console\Commands\CheckReminderHistory;
 
 /**
  * コンソールカーネル
@@ -18,6 +20,8 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         SendReminders::class,
+        TestSubscriptionReminders::class,
+        CheckReminderHistory::class,
     ];
 
     /**
