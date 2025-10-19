@@ -37,9 +37,10 @@ class LineMessagingService
      * リマインドメッセージを送信
      * 
      * @param ReminderHistory $reminderHistory
+     * @param bool $isTest テスト送信かどうか
      * @return bool
      */
-    public function sendReminderMessage(ReminderHistory $reminderHistory): bool
+    public function sendReminderMessage(ReminderHistory $reminderHistory, bool $isTest = false): bool
     {
         try {
             $subscription = $reminderHistory->subscription;
@@ -58,13 +59,18 @@ class LineMessagingService
             // メッセージ内容を生成
             $message = $this->generateReminderMessage($subscription, $reminderHistory->days_before);
             
+            // テスト送信の場合はメッセージにプレフィックスを追加
+            if ($isTest) {
+                $message = "【テスト送信】\n" . $message;
+            }
+            
             // LINEメッセージを送信
             $response = $this->sendMessage($lineToken->line_user_id, $message);
             
             if ($response['success']) {
                 // 送信成功時の処理
                 $reminderHistory->update([
-                    'status' => 'sent',
+                    'status' => $isTest ? 'test' : 'sent',  // テスト送信の場合は'test'
                     'sent_at' => Carbon::now(),
                     'scheduled_at' => Carbon::now(),
                     'message' => $message,
@@ -78,7 +84,8 @@ class LineMessagingService
                     'user_id' => $user->id,
                     'subscription_id' => $subscription->id,
                     'reminder_history_id' => $reminderHistory->id,
-                    'days_before' => $reminderHistory->days_before
+                    'days_before' => $reminderHistory->days_before,
+                    'is_test' => $isTest
                 ]);
                 
                 return true;

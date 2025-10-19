@@ -469,7 +469,7 @@ class ReminderController extends Controller
             }
 
             $lineMessagingService = app(\App\Services\LineMessagingService::class);
-            $success = $lineMessagingService->sendReminderMessage($testReminder);
+            $success = $lineMessagingService->sendReminderMessage($testReminder, true); 
 
             if ($success) {
                 return response()->json([

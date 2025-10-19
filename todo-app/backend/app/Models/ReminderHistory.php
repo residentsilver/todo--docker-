@@ -64,6 +64,7 @@ class ReminderHistory extends Model
         'sent' => '送信済み',
         'failed' => '送信失敗',
         'cancelled' => 'キャンセル',
+        'test' => 'テスト送信', 
     ];
 
     /**
