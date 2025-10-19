@@ -157,13 +157,14 @@ class SendReminders extends Command
 
         try {
             $now = Carbon::now();
-            $today = $now->toDateString();
+            $currentTime = $now->format('H:i');
 
             // 条件に一致するサブスクリプションを取得
             $subscriptions = Subscription::with(['user.activeLineToken'])
                 ->where('notification_enabled', true)
                 ->where('status', 'active')
                 ->whereNotNull('reminder_days')
+                ->whereNotNull('reminder_time')
                 ->get();
 
             $this->line("チェック対象のサブスクリプション: {$subscriptions->count()}件");
@@ -176,6 +177,13 @@ class SendReminders extends Command
                         continue;
                     }
 
+                    // リマインド時間の確認（現在時刻がリマインド時間と一致するかチェック）
+                    $reminderTime = Carbon::parse($subscription->reminder_time)->format('H:i');
+                    if ($currentTime !== $reminderTime) {
+                        $this->line("サブスクリプション '{$subscription->service_name}' のリマインド時間 ({$reminderTime}) と現在時刻 ({$currentTime}) が一致しません");
+                        continue;
+                    }
+
                     // reminder_daysの各値に対してチェック
                     $reminderDays = $subscription->reminder_days;
                     if (!is_array($reminderDays)) {
@@ -185,6 +193,7 @@ class SendReminders extends Command
                     foreach ($reminderDays as $daysBefore) {
                         // 指定日数前の日付を計算
                         $targetDate = Carbon::parse($subscription->end_date)->subDays($daysBefore)->toDateString();
+                        $today = $now->toDateString();
                         
                         // 今日の日付と一致するかチェック
                         if ($targetDate === $today) {
