@@ -334,8 +334,8 @@ const SubscriptionCard = ({ subscription, onEdit, onDelete, onTestSend }) => {
  */
 const SubscriptionList = ({ onEdit, onCreate }) => {
   const [filters, setFilters] = useState({
-    status: '',
-    contract_type: '',
+    status: 'all',
+    contract_type: 'all',
     sort_by: 'end_date',
     sort_order: 'asc'
   });
@@ -474,13 +474,14 @@ const SubscriptionList = ({ onEdit, onCreate }) => {
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>ステータス</InputLabel>
+              <InputLabel shrink>ステータス</InputLabel>
               <Select
                 value={filters.status}
                 label="ステータス"
                 onChange={(e) => handleFilterChange('status', e.target.value)}
+                displayEmpty
               >
-                <MenuItem value="">すべて</MenuItem>
+                <MenuItem value="all">すべて</MenuItem>
                 <MenuItem value="active">アクティブ</MenuItem>
                 <MenuItem value="expired">期限切れ</MenuItem>
                 <MenuItem value="cancelled">解約済み</MenuItem>
@@ -490,13 +491,14 @@ const SubscriptionList = ({ onEdit, onCreate }) => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>契約タイプ</InputLabel>
+              <InputLabel shrink>契約タイプ</InputLabel>
               <Select
                 value={filters.contract_type}
                 label="契約タイプ"
                 onChange={(e) => handleFilterChange('contract_type', e.target.value)}
+                displayEmpty
               >
-                <MenuItem value="">すべて</MenuItem>
+                <MenuItem value="all">すべて</MenuItem>
                 <MenuItem value="monthly">月額</MenuItem>
                 <MenuItem value="yearly">年額</MenuItem>
                 <MenuItem value="free_trial">無料トライアル</MenuItem>
