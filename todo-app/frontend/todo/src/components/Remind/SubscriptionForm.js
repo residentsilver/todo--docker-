@@ -89,6 +89,8 @@ const SubscriptionForm = ({ open, subscription, onClose, onSuccess }) => {
   const [errors, setErrors] = useState({});
   const [previewMessage, setPreviewMessage] = useState('');
   const [showPreview, setShowPreview] = useState(false);
+  const [showAddDayDialog, setShowAddDayDialog] = useState(false);
+  const [newDayValue, setNewDayValue] = useState('');
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -171,16 +173,40 @@ const SubscriptionForm = ({ open, subscription, onClose, onSuccess }) => {
   };
 
   /**
+   * リマインド日数の追加ダイアログを開く
+   */
+  const openAddDayDialog = () => {
+    setNewDayValue('');
+    setShowAddDayDialog(true);
+  };
+
+  /**
    * リマインド日数の追加
    */
   const addReminderDay = () => {
-    const newDay = 1;
-    if (!formData.reminder_days.includes(newDay)) {
-      setFormData(prev => ({
-        ...prev,
-        reminder_days: [...prev.reminder_days, newDay].sort((a, b) => b - a)
-      }));
+    const dayValue = parseInt(newDayValue, 10);
+    if (!isNaN(dayValue) && dayValue > 0) {
+      if (!formData.reminder_days.includes(dayValue)) {
+        setFormData(prev => ({
+          ...prev,
+          reminder_days: [...prev.reminder_days, dayValue].sort((a, b) => b - a)
+        }));
+        setShowAddDayDialog(false);
+        setNewDayValue('');
+      } else {
+        alert(`${dayValue}日前の通知は既に設定されています。`);
+      }
+    } else {
+      alert('有効な数値を入力してください。');
     }
+  };
+
+  /**
+   * リマインド日数追加ダイアログを閉じる
+   */
+  const closeAddDayDialog = () => {
+    setShowAddDayDialog(false);
+    setNewDayValue('');
   };
 
   /**
@@ -530,8 +556,9 @@ const SubscriptionForm = ({ open, subscription, onClose, onSuccess }) => {
                               ))}
                               <IconButton
                                 size="small"
-                                onClick={addReminderDay}
+                                onClick={openAddDayDialog}
                                 color="primary"
+                                title="リマインド日数を追加"
                               >
                                 <AddIcon />
                               </IconButton>
@@ -614,6 +641,43 @@ const SubscriptionForm = ({ open, subscription, onClose, onSuccess }) => {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* リマインド日数追加ダイアログ */}
+      <Dialog
+        open={showAddDayDialog}
+        onClose={closeAddDayDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          リマインド日数を追加
+        </DialogTitle>
+        <DialogContent>
+          <TextField
+            label="何日前に通知しますか？"
+            type="number"
+            value={newDayValue}
+            onChange={(e) => setNewDayValue(e.target.value)}
+            fullWidth
+            margin="normal"
+            placeholder="例: 14"
+            inputProps={{ min: 1, max: 365 }}
+            helperText="1〜365の数値を入力してください"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeAddDayDialog} color="inherit">
+            キャンセル
+          </Button>
+          <Button
+            onClick={addReminderDay}
+            variant="contained"
+            disabled={!newDayValue || isNaN(parseInt(newDayValue, 10)) || parseInt(newDayValue, 10) <= 0}
+          >
+            追加
+          </Button>
+        </DialogActions>
       </Dialog>
     </LocalizationProvider>
   );
