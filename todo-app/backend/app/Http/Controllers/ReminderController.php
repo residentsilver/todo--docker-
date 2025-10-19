@@ -259,11 +259,11 @@ class ReminderController extends Controller
             $query = $user->reminderHistories()->with(['subscription']);
 
             // フィルタリング
-            if ($request->has('status')) {
+            if ($request->has('status') && $request->status !== '' && $request->status !== 'all') {
                 $query->where('status', $request->status);
             }
 
-            if ($request->has('subscription_id')) {
+            if ($request->has('subscription_id') && $request->subscription_id !== '' && $request->subscription_id !== null) {
                 $query->where('subscription_id', $request->subscription_id);
             }
 
@@ -272,20 +272,95 @@ class ReminderController extends Controller
             $sortOrder = $request->get('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
-            // ページネーション
             $perPage = $request->get('per_page', 15);
-            $histories = $query->paginate($perPage);
+            $page = $request->get('page', 1);
+            
+            // まず、ページネーションなしでデータを取得してテスト
+            $allData = $query->get();
+            
+            // ページネーションを適用
+            $histories = $query->paginate($perPage, ['*'], 'page', $page);
+            
 
+            // 一時的にページネーションを無効にして、直接データを返す
             return response()->json([
                 'status' => 'success',
-                'data' => $histories,
-                'message' => 'リマインド履歴を取得しました'
+                'data' => [
+                    'data' => $allData,
+                    'total' => $allData->count(),
+                    'current_page' => 1,
+                    'per_page' => $allData->count(),
+                    'last_page' => 1,
+                    'from' => 1,
+                    'to' => $allData->count()
+                ],
+                'message' => 'リマインド履歴を取得しました',
+                'debug' => [
+                    'allData_count' => $allData->count(),
+                    'allData_first_item' => $allData->first(),
+                    'query_sql' => $query->toSql(),
+                    'query_bindings' => $query->getBindings(),
+                    'filtering_params' => [
+                        'status' => $request->get('status'),
+                        'subscription_id' => $request->get('subscription_id'),
+                        'has_status' => $request->has('status'),
+                        'has_subscription_id' => $request->has('subscription_id'),
+                        'status_empty' => $request->get('status') === '',
+                        'subscription_id_empty' => $request->get('subscription_id') === ''
+                    ],
+                    'user_id' => $user->id,
+                    'request_all' => $request->all()
+                ]
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'リマインド履歴の取得に失敗しました',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * リマインド履歴のデバッグ用エンドポイント
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function debugReminderHistories(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            
+            // 直接データベースから全データを取得
+            $allHistories = \DB::table('reminder_histories')
+                ->where('user_id', $user->id)
+                ->get();
+            
+            // ユーザーのリレーション経由で取得
+            $userHistories = $user->reminderHistories()->get();
+            
+            // サブスクリプションも確認
+            $userSubscriptions = $user->subscriptions()->get();
+            
+            return response()->json([
+                'status' => 'success',
+                'debug' => [
+                    'user_id' => $user->id,
+                    'direct_db_count' => $allHistories->count(),
+                    'user_relation_count' => $userHistories->count(),
+                    'user_subscriptions_count' => $userSubscriptions->count(),
+                    'direct_db_data' => $allHistories,
+                    'user_relation_data' => $userHistories,
+                    'user_subscriptions' => $userSubscriptions
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'デバッグ情報の取得に失敗しました',
                 'error' => $e->getMessage()
             ], 500);
         }

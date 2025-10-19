@@ -104,7 +104,7 @@ function Home() {
         if (oldIndex !== -1 && newIndex !== -1) {
             // 検索モードでは順序変更を無効化
             if (searchMode) {
-                console.log('検索モードでは順序変更はできません');
+                // console.log('検索モードでは順序変更はできません');
                 return;
             }
 

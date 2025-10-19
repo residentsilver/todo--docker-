@@ -19,11 +19,11 @@ const useUpdateToDoOrderMutateTask = () => {
      */
     const updateToDoOrder = async (orderData) => {
         try {
-            console.log('Todo順序更新API呼び出し開始:', {
-                orderData,
-                orderArray: orderData.order,
-                orderLength: orderData.order?.length
-            });
+            // console.log('Todo順序更新API呼び出し開始:', {
+            //     orderData,
+            //     orderArray: orderData.order,
+            //     orderLength: orderData.order?.length
+            // });
 
             const requestPayload = {
                 todos: orderData.order.map((id, index) => ({
@@ -32,21 +32,21 @@ const useUpdateToDoOrderMutateTask = () => {
                 }))
             };
 
-            console.log('送信するリクエストペイロード:', requestPayload);
+            // console.log('送信するリクエストペイロード:', requestPayload);
 
             const data = await authenticatedRequest('/todos/order', {
                 method: 'PUT',
                 body: JSON.stringify(requestPayload),
             });
             
-            console.log('Todo順序更新API呼び出し成功:', data);
+            // console.log('Todo順序更新API呼び出し成功:', data);
             return data;
         } catch (error) {
-            console.error('Todo順序の更新に失敗しました:', {
-                error,
-                errorMessage: error.message,
-                requestData: orderData
-            });
+            // console.error('Todo順序の更新に失敗しました:', {
+            //     error,
+            //     errorMessage: error.message,
+            //     requestData: orderData
+            // });
             throw error;
         }
     };

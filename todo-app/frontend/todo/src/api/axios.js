@@ -11,11 +11,11 @@ import axios from 'axios';
     const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 // デバッグ用（本番環境では削除）
-console.log('Environment:', {
-    REACT_APP_DEPLOY_ENV: process.env.REACT_APP_DEPLOY_ENV,
-    NODE_ENV: process.env.NODE_ENV,
-    API_BASE_URL: API_BASE_URL
-});
+// console.log('Environment:', {
+//     REACT_APP_DEPLOY_ENV: process.env.REACT_APP_DEPLOY_ENV,
+//     NODE_ENV: process.env.NODE_ENV,
+//     API_BASE_URL: API_BASE_URL
+// });
 
 // Axiosインスタンスを作成
 const apiClient = axios.create({

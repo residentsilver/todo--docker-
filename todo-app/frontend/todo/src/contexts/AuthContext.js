@@ -327,12 +327,12 @@ export const AuthProvider = ({ children }) => {
      */
     const updateProfile = async (profileData) => {
         try {
-            console.log('Profile update request:', {
-                endpoint: '/profile',
-                method: 'PUT',
-                hasToken: !!token,
-                profileData: { ...profileData, current_password: '[HIDDEN]', password: '[HIDDEN]', password_confirmation: '[HIDDEN]' }
-            });
+            // console.log('Profile update request:', {
+            //     endpoint: '/profile',
+            //     method: 'PUT',
+            //     hasToken: !!token,
+            //     profileData: { ...profileData, current_password: '[HIDDEN]', password: '[HIDDEN]', password_confirmation: '[HIDDEN]' }
+            // });
 
             const data = await authenticatedRequest('/profile', {
                 method: 'PUT',
@@ -342,10 +342,10 @@ export const AuthProvider = ({ children }) => {
             // ユーザー情報を更新
             setUser(data.user);
 
-            console.log('Profile update successful:', data.message);
+            // console.log('Profile update successful:', data.message);
             return data;
         } catch (error) {
-            console.error('Profile update error:', error);
+            // console.error('Profile update error:', error);
             
             // バリデーションエラーの処理を改善
             if (error.message.includes('\n')) {
@@ -404,7 +404,7 @@ export const AuthProvider = ({ children }) => {
         try {
             // 認証が不要なエンドポイントをテスト（存在しない場合は404が返る）
             const testUrl = `${API_BASE_URL}/test-connection`;
-            console.log('Testing API connection to:', testUrl);
+            // console.log('Testing API connection to:', testUrl);
             
             const response = await fetch(testUrl, {
                 method: 'GET',
@@ -414,23 +414,23 @@ export const AuthProvider = ({ children }) => {
                 }
             });
             
-            console.log('API Connection Test Result:', {
-                url: testUrl,
-                status: response.status,
-                statusText: response.statusText,
-                ok: response.ok
-            });
+            // console.log('API Connection Test Result:', {
+            //     url: testUrl,
+            //     status: response.status,
+            //     statusText: response.statusText,
+            //     ok: response.ok
+            // });
             
             // 404は正常（エンドポイントが存在しないが、サーバーは動作している）
             if (response.status === 404) {
-                console.log('✅ API server is running (404 is expected for test endpoint)');
+                // console.log('✅ API server is running (404 is expected for test endpoint)');
             } else if (response.status === 500) {
                 console.error('❌ API server has internal error');
             } else {
-                console.log('API server responded with status:', response.status);
+                // console.log('API server responded with status:', response.status);
             }
         } catch (error) {
-            console.error('❌ API Connection Test Failed:', error.message);
+            // console.error('❌ API Connection Test Failed:', error.message);
         }
     };
 

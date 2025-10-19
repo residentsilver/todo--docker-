@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // リマインド履歴
         Route::get('/history', [ReminderController::class, 'getHistory']);
         Route::get('/histories', [ReminderController::class, 'reminderHistories']);
+        Route::get('/histories/debug', [ReminderController::class, 'debugReminderHistories']);
         
         // 統計・分析
         Route::get('/analytics', [ReminderController::class, 'getAnalytics']);

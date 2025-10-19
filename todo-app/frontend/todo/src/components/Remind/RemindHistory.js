@@ -64,6 +64,11 @@ const StatusChip = ({ status }) => {
       color: 'success',
       icon: <CheckCircleIcon sx={{ fontSize: 16 }} />
     },
+    test: {
+      label: 'テスト送信',
+      color: 'info',
+      icon: <CheckCircleIcon sx={{ fontSize: 16 }} />
+    },
     failed: {
       label: '送信失敗',
       color: 'error',
@@ -194,11 +199,14 @@ const RemindHistory = () => {
     refetch
   } = useQuery(
     ['reminder-histories', { ...filters, page: page + 1, per_page: rowsPerPage }],
-    () => api.fetchReminderHistories({
-      ...filters,
-      page: page + 1,
-      per_page: rowsPerPage
-    }),
+    () => {
+      const params = {
+        ...filters,
+        page: page + 1,
+        per_page: rowsPerPage
+      };
+      return api.fetchReminderHistories(params);
+    },
     {
       keepPreviousData: true
     }
@@ -238,12 +246,33 @@ const RemindHistory = () => {
           <HistoryIcon sx={{ mr: 1, color: 'primary.main' }} />
           リマインド履歴
         </Typography>
-        <Tooltip title="データを更新">
-          <IconButton onClick={() => refetch()} disabled={isLoading}>
-            <RefreshIcon />
-          </IconButton>
-        </Tooltip>
+        {/* <Box sx={{ display: 'flex', gap: 1 }}> */}
+          <Tooltip title="データを更新">
+            <IconButton onClick={() => refetch()} disabled={isLoading}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+          {/* <Tooltip title="デバッグ情報を取得">
+            <IconButton onClick={async () => {
+              try {
+                const response = await apiClient.get('/remind/histories/debug');
+                console.log('Debug API Response:', response.data);
+              } catch (error) {
+                console.error('Debug API Error:', error);
+              }
+            }}>
+              <HistoryIcon />
+            </IconButton>
+          </Tooltip>
+        </Box> */}
       </Box>
+
+      {/* エラー表示 */}
+      {/* {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          データの取得に失敗しました: {error.message}
+        </Alert>
+      )} */}
 
       {/* フィルター */}
       <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
@@ -259,10 +288,12 @@ const RemindHistory = () => {
                 value={filters.status}
                 label="ステータス"
                 onChange={(e) => handleFilterChange('status', e.target.value)}
+                displayEmpty
               >
-                <MenuItem value="">すべて</MenuItem>
+                <MenuItem value="all">すべて</MenuItem>
                 <MenuItem value="pending">送信待ち</MenuItem>
                 <MenuItem value="sent">送信済み</MenuItem>
+                <MenuItem value="test">テスト送信</MenuItem>
                 <MenuItem value="failed">送信失敗</MenuItem>
                 <MenuItem value="cancelled">キャンセル</MenuItem>
               </Select>
@@ -270,11 +301,12 @@ const RemindHistory = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>ソート</InputLabel>
+              <InputLabel shrink>ソート</InputLabel>
               <Select
                 value={filters.sort_by}
                 label="ソート"
                 onChange={(e) => handleFilterChange('sort_by', e.target.value)}
+                displayEmpty
               >
                 <MenuItem value="scheduled_at">送信予定日時</MenuItem>
                 <MenuItem value="sent_at">送信完了日時</MenuItem>
@@ -285,11 +317,12 @@ const RemindHistory = () => {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
-              <InputLabel>順序</InputLabel>
+              <InputLabel shrink>順序</InputLabel>
               <Select
                 value={filters.sort_order}
                 label="順序"
                 onChange={(e) => handleFilterChange('sort_order', e.target.value)}
+                displayEmpty
               >
                 <MenuItem value="desc">降順（新しい順）</MenuItem>
                 <MenuItem value="asc">昇順（古い順）</MenuItem>
@@ -298,13 +331,6 @@ const RemindHistory = () => {
           </Grid>
         </Grid>
       </Paper>
-
-      {/* エラー表示 */}
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          データの取得に失敗しました: {error.message}
-        </Alert>
-      )}
 
       {/* ローディング */}
       {isLoading && (
@@ -368,12 +394,12 @@ const RemindHistory = () => {
                 color: 'text.secondary'
               }}
             >
-              <HistoryIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
+              <HistoryIcon sx={{ fontSize: 64, mb: 2, opacity: 0.3 }} />
               <Typography variant="h6" gutterBottom>
                 リマインド履歴がありません
               </Typography>
               <Typography variant="body2">
-                サブスクリプションを追加すると、リマインド通知の履歴がここに表示されます
+                サブスクリプションのリマインドが送信されると、ここに履歴が表示されます。
               </Typography>
             </Box>
           ) : (
@@ -387,26 +413,24 @@ const RemindHistory = () => {
                 </Box>
               ) : (
                 // デスクトップ表示
-                <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+                <TableContainer component={Paper}>
                   <Table>
                     <TableHead>
-                      <TableRow sx={{ bgcolor: 'grey.50' }}>
+                      <TableRow>
                         <TableCell sx={{ fontWeight: 600 }}>サービス</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>通知日数</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>送信予定</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>送信完了</TableCell>
                         <TableCell sx={{ fontWeight: 600 }}>ステータス</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>エラー</TableCell>
+                        <TableCell sx={{ fontWeight: 600 }}>エラー詳細</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {histories.map((history) => (
-                        <TableRow 
+                        <TableRow
                           key={history.id}
-                          sx={{ 
-                            '&:hover': { bgcolor: 'grey.50' },
-                            '&:last-child td, &:last-child th': { border: 0 }
-                          }}
+                          hover
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                         >
                           <TableCell>
                             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -422,22 +446,19 @@ const RemindHistory = () => {
                                 {history.subscription?.service_name?.charAt(0).toUpperCase() || 'S'}
                               </Avatar>
                               <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                                   {history.subscription?.service_name || 'Unknown Service'}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
-                                  ¥{Number(history.subscription?.amount || 0).toLocaleString()}
+                                  ID: {history.subscription_id}
                                 </Typography>
                               </Box>
                             </Box>
                           </TableCell>
                           <TableCell>
-                            <Chip
-                              label={`${history.days_before}日前`}
-                              size="small"
-                              variant="outlined"
-                              color="primary"
-                            />
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {history.days_before}日前
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
@@ -518,4 +539,4 @@ const RemindHistory = () => {
   );
 };
 
-export default RemindHistory; 
+export default RemindHistory;
