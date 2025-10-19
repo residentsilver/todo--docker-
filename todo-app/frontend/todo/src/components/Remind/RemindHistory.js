@@ -248,9 +248,11 @@ const RemindHistory = () => {
         </Typography>
         {/* <Box sx={{ display: 'flex', gap: 1 }}> */}
           <Tooltip title="データを更新">
-            <IconButton onClick={() => refetch()} disabled={isLoading}>
-              <RefreshIcon />
-            </IconButton>
+            <span>
+              <IconButton onClick={() => refetch()} disabled={isLoading}>
+                <RefreshIcon />
+              </IconButton>
+            </span>
           </Tooltip>
           {/* <Tooltip title="デバッグ情報を取得">
             <IconButton onClick={async () => {
