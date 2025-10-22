@@ -27,6 +27,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "build:staging": "REACT_APP_API_URL=https://todo.sumaho-clinic.com/api react-scripts build",
     "serve": "serve -s build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
