@@ -1,0 +1,131 @@
+# ステージング環境へのデプロイワークフロー
+# stagingブランチへのpush時に自動的にテスト→ビルド→デプロイを実行します
+
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  # バックエンドのテストとデプロイ
+  deploy-backend:
+    name: バックエンドをステージングにデプロイ
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # PHPのセットアップ
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_sqlite, sqlite3
+          coverage: none
+
+      # Composer依存関係のインストール
+      - name: Install Composer dependencies
+        working-directory: ./todo-app/backend
+        run: composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
+
+      # .envファイルの準備（テスト用）
+      - name: Prepare test environment
+        working-directory: ./todo-app/backend
+        run: |
+          cp .env.example .env
+          echo "APP_ENV=testing" >> .env
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+          php artisan key:generate
+
+      # SSHキーのセットアップ
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+
+      # known_hostsの追加
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      # ステージングサーバーへのデプロイ
+      - name: Deploy to staging server
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
+        run: |
+          # デプロイスクリプトの実行
+          ssh $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy.sh"
+
+      # デプロイ通知（オプション）
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Backend deployment to staging completed with status: ${{ job.status }}"
+
+  # フロントエンドのビルドとデプロイ
+  deploy-frontend:
+    name: フロントエンドをステージングにデプロイ
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node.jsのセットアップ
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # npm依存関係のインストール
+      - name: Install dependencies
+        working-directory: ./todo-app/frontend/todo
+        run: npm ci
+
+      # ステージング用のビルド
+      - name: Build for staging
+        working-directory: ./todo-app/frontend/todo
+        env:
+          REACT_APP_API_URL: ${{ secrets.STAGING_API_URL }}
+          REACT_APP_ENV: staging
+        run: npm run build
+
+      # SSHキーのセットアップ
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+
+      # known_hostsの追加
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      # ステージングサーバーへのデプロイ
+      - name: Deploy to staging server
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+          STAGING_PATH: ${{ secrets.STAGING_FRONTEND_PATH }}
+        run: |
+          # ビルドファイルをサーバーに転送
+          rsync -avz --delete \
+            todo-app/frontend/todo/build/ \
+            $STAGING_USER@$STAGING_HOST:$STAGING_PATH/
+
+      # デプロイ通知（オプション）
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Frontend deployment to staging completed with status: ${{ job.status }}"
+

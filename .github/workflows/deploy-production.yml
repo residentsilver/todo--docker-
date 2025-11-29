@@ -1,0 +1,146 @@
+# 本番環境へのデプロイワークフロー
+# mainブランチへのpush時に自動的にテスト→ビルド→デプロイを実行します
+
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  # バックエンドのテストとデプロイ
+  deploy-backend:
+    name: バックエンドを本番環境にデプロイ
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # PHPのセットアップ
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, pdo, pdo_mysql, pdo_sqlite, sqlite3
+          coverage: none
+
+      # Composer依存関係のインストール（本番用、最適化あり）
+      - name: Install Composer dependencies
+        working-directory: ./todo-app/backend
+        run: composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
+
+      # .envファイルの準備（テスト用）
+      - name: Prepare test environment
+        working-directory: ./todo-app/backend
+        run: |
+          cp .env.example .env
+          echo "APP_ENV=testing" >> .env
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=:memory:" >> .env
+          php artisan key:generate
+
+      # SSHキーのセットアップ
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+
+      # known_hostsの追加
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PRODUCTION_HOST }} >> ~/.ssh/known_hosts
+
+      # 本番サーバーへのデプロイ
+      - name: Deploy to production server
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ secrets.PRODUCTION_BACKEND_PATH }}
+        run: |
+          # デプロイスクリプトの実行
+          ssh $PRODUCTION_USER@$PRODUCTION_HOST "cd $PRODUCTION_PATH && bash deploy.sh"
+
+      # デプロイ通知
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Backend deployment to production completed with status: ${{ job.status }}"
+
+  # フロントエンドのビルドとデプロイ
+  deploy-frontend:
+    name: フロントエンドを本番環境にデプロイ
+    runs-on: ubuntu-latest
+
+    steps:
+      # リポジトリのチェックアウト
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node.jsのセットアップ
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # npm依存関係のインストール
+      - name: Install dependencies
+        working-directory: ./todo-app/frontend/todo
+        run: npm ci
+
+      # 本番用のビルド
+      - name: Build for production
+        working-directory: ./todo-app/frontend/todo
+        env:
+          REACT_APP_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          REACT_APP_ENV: production
+        run: npm run build
+
+      # SSHキーのセットアップ
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.PRODUCTION_SSH_KEY }}
+
+      # known_hostsの追加
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PRODUCTION_HOST }} >> ~/.ssh/known_hosts
+
+      # 本番サーバーへのデプロイ
+      - name: Deploy to production server
+        env:
+          PRODUCTION_HOST: ${{ secrets.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ secrets.PRODUCTION_USER }}
+          PRODUCTION_PATH: ${{ secrets.PRODUCTION_FRONTEND_PATH }}
+        run: |
+          # バックアップの作成
+          ssh $PRODUCTION_USER@$PRODUCTION_HOST "cd $PRODUCTION_PATH && [ -d 'current' ] && cp -r current backup_$(date +%Y%m%d_%H%M%S) || echo 'No backup needed'"
+          
+          # ビルドファイルをサーバーに転送
+          rsync -avz --delete \
+            todo-app/frontend/todo/build/ \
+            $PRODUCTION_USER@$PRODUCTION_HOST:$PRODUCTION_PATH/current/
+
+      # ヘルスチェック（オプション）
+      - name: Health check
+        env:
+          PRODUCTION_URL: ${{ secrets.PRODUCTION_URL }}
+        run: |
+          sleep 10
+          response=$(curl -s -o /dev/null -w "%{http_code}" $PRODUCTION_URL)
+          if [ $response -eq 200 ]; then
+            echo "✅ Health check passed: $response"
+          else
+            echo "⚠️ Health check warning: $response"
+          fi
+
+      # デプロイ通知
+      - name: Notify deployment
+        if: always()
+        run: |
+          echo "Frontend deployment to production completed with status: ${{ job.status }}"
