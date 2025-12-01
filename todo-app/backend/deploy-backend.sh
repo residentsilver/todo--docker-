@@ -12,7 +12,7 @@ git fetch origin
 git reset --hard origin/staging
 
 # 依存関係をインストール（PHP 8.3を使用）
-$PHP_CMD composer install --no-dev --optimize-autoloader --no-interaction
+# $PHP_CMD composer install --no-dev --optimize-autoloader --no-interaction
 
 # キャッシュクリア
 $PHP_CMD artisan cache:clear
