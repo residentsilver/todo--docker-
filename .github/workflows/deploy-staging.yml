@@ -116,8 +116,8 @@ jobs:
         run: |
           # ビルドファイルをサーバーに転送
           rsync -avz --delete -e "ssh -p $STAGING_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no" \
-            $STAGING_FRONTEND_PATH \
-            $STAGING_USER@$STAGING_HOST:$STAGING_PATH/
+            todo-app/frontend/todo/build/ \
+            $STAGING_USER@$STAGING_HOST:$STAGING_PUBLIC_PATH/
 
       # デプロイ通知（オプション）
       - name: Notify deployment
