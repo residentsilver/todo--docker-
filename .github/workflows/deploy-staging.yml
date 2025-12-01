@@ -25,12 +25,6 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
 
-      # ホスト名の確認（デバッグ用）
-      - name: Verify hostname
-        run: |
-          echo "STAGING_HOST is set: ${{ secrets.STAGING_HOST != '' }}"
-          echo "Hostname: ${{ secrets.STAGING_HOST }}"
-
       # known_hostsの追加
       - name: Add server to known hosts
         run: |
