@@ -4,7 +4,7 @@ set -e
 echo "デプロイ開始..."
 
 PHP_CMD="php8.3"
-cd ../backend
+cd /home/ncbrynch/sumaho-clinic.com/public_html/todo.sumaho-clinic.com/todo--docker-/todo-app/backend
 
 # メンテナンスモード
 $PHP_CMD artisan down --retry=60 || true
