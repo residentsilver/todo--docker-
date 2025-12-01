@@ -114,7 +114,7 @@ jobs:
           STAGING_PORT: ${{ secrets.STAGING_PORT }}
         run: |
           # ビルドファイルをサーバーに転送
-          rsync -avz --delete -e "ssh -p STAGING_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no" \
+          rsync -avz --delete -e "ssh -p $STAGING_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no" \
             todo-app/frontend/todo/build/ \
             $STAGING_USER@$STAGING_HOST:$STAGING_PATH/
 
