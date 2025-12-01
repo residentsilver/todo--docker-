@@ -119,12 +119,6 @@ const menuItems = [
     description: 'Todo管理画面'
   },
   {
-    text: 'AI Todo',
-    path: '/aiTodo',
-    icon: <SmartToyIcon />,
-    description: 'AI搭載Todo機能'
-  },
-  {
     text: 'リマインド',
     path: '/remind',
     icon: <NotificationsIcon />,
