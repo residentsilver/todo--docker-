@@ -3,41 +3,50 @@ set -e
 
 echo "🚀 デプロイ開始..."
 
+# PHPコマンドの決定（php8.3を優先、なければphp8.2、それもなければphp）
+PHP_CMD="php"
+if command -v php8.3 &> /dev/null; then
+  PHP_CMD="php8.3"
+  echo "Using PHP 8.3"
+elif command -v php8.2 &> /dev/null; then
+  PHP_CMD="php8.2"
+  echo "Using PHP 8.2"
+else
+  echo "Warning: PHP 8.2+ not found, using default PHP"
+  php -v
+fi
+
 # メンテナンスモード
-php artisan down --retry=60 || true
+$PHP_CMD artisan down --retry=60 || true
 
 # 最新コードを取得
 git fetch origin
 git reset --hard origin/staging
 
-cd ../backend
 # 依存関係をインストール
 composer install --no-dev --optimize-autoloader --no-interaction
 
 # キャッシュクリア
-php artisan cache:clear
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
+$PHP_CMD artisan cache:clear
+$PHP_CMD artisan config:clear
+$PHP_CMD artisan route:clear
+$PHP_CMD artisan view:clear
 
 # キャッシュ作成
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+$PHP_CMD artisan config:cache
+$PHP_CMD artisan route:cache
+$PHP_CMD artisan view:cache
 
 # マイグレーション
-php artisan migrate --force
+$PHP_CMD artisan migrate --force
 
 # 最適化
-php artisan optimize
+$PHP_CMD artisan optimize
 
 # パーミッション設定
 chmod -R 775 storage bootstrap/cache
 
 # メンテナンスモード解除
-php artisan up
+$PHP_CMD artisan up
 
 echo "✅ デプロイ完了！"
-```
-
-保存: `Ctrl + X` → `Y` → `Enter`
