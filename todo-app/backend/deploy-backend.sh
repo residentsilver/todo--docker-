@@ -27,7 +27,7 @@ $PHP_CMD artisan view:cache
 
 # マイグレーション
 $PHP_CMD artisan migrate --force
-
+ 
 # 最適化
 $PHP_CMD artisan optimize
 
