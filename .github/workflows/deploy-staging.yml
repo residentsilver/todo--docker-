@@ -47,7 +47,7 @@ jobs:
           STAGING_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
         run: |
           # デプロイスクリプトの実行
-          ssh $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy.sh"
+          ssh $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy_backend.sh"
 
       # デプロイ通知（オプション）
       - name: Notify deployment
