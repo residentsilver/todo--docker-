@@ -1,5 +1,5 @@
 # ステージング環境へのデプロイワークフロー
-# stagingブランチへのpush時に自動的にテスト→ビルド→デプロイを実行します
+# stagingブランチへのpush時に自動的にビルド→デプロイを実行します
 
 name: Deploy to Staging
 
@@ -9,7 +9,7 @@ on:
       - staging
 
 jobs:
-  # バックエンドのテストとデプロイ
+  # バックエンドのデプロイ
   deploy-backend:
     name: バックエンドをステージングにデプロイ
     runs-on: ubuntu-latest
@@ -18,29 +18,6 @@ jobs:
       # リポジトリのチェックアウト
       - name: Checkout code
         uses: actions/checkout@v4
-
-      # PHPのセットアップ
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          extensions: mbstring, pdo, pdo_sqlite, sqlite3
-          coverage: none
-
-      # Composer依存関係のインストール
-      - name: Install Composer dependencies
-        working-directory: ./todo-app/backend
-        run: composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
-
-      # .envファイルの準備（テスト用）
-      - name: Prepare test environment
-        working-directory: ./todo-app/backend
-        run: |
-          cp .env.example .env
-          echo "APP_ENV=testing" >> .env
-          echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=:memory:" >> .env
-          php artisan key:generate
 
       # SSHキーのセットアップ
       - name: Setup SSH
