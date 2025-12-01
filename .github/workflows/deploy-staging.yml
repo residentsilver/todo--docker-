@@ -56,7 +56,7 @@ jobs:
           STAGING_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
         run: |
           # デプロイスクリプトの実行
-          ssh -p 10022 -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy.sh"
+          ssh -p 10022 -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy_backend.sh"
 
       # デプロイ通知（オプション）
       - name: Notify deployment
