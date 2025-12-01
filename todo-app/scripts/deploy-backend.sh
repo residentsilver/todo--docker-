@@ -10,6 +10,7 @@ php artisan down --retry=60 || true
 git fetch origin
 git reset --hard origin/staging
 
+cd ../backend
 # 依存関係をインストール
 composer install --no-dev --optimize-autoloader --no-interaction
 
