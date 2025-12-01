@@ -36,5 +36,4 @@ chmod -R 775 storage bootstrap/cache
 
 # メンテナンスモード解除
 $PHP_CMD artisan up
-
 echo "デプロイ完了！"
