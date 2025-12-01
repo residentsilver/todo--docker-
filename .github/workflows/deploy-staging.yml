@@ -36,8 +36,17 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts 2>&1 || echo "Warning: ssh-keyscan failed, but continuing..."
+          ssh-keyscan -p 10022 -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts 2>&1 || echo "Warning: ssh-keyscan failed, but continuing..."
           chmod 644 ~/.ssh/known_hosts
+
+      # SSH接続のテスト
+      - name: Test SSH connection
+        env:
+          STAGING_HOST: ${{ secrets.STAGING_HOST }}
+          STAGING_USER: ${{ secrets.STAGING_USER }}
+        run: |
+          echo "Testing SSH connection..."
+          ssh -p 10022 -o ConnectTimeout=10 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "echo 'SSH connection successful'" || echo "SSH connection failed"
 
       # ステージングサーバーへのデプロイ
       - name: Deploy to staging server
@@ -47,7 +56,7 @@ jobs:
           STAGING_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
         run: |
           # デプロイスクリプトの実行
-          ssh $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy_backend.sh"
+          ssh -p 10022 -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy.sh"
 
       # デプロイ通知（オプション）
       - name: Notify deployment
@@ -101,7 +110,7 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts 2>&1 || echo "Warning: ssh-keyscan failed, but continuing..."
+          ssh-keyscan -p 10022 -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts 2>&1 || echo "Warning: ssh-keyscan failed, but continuing..."
           chmod 644 ~/.ssh/known_hosts
 
       # ステージングサーバーへのデプロイ
@@ -112,7 +121,7 @@ jobs:
           STAGING_PATH: ${{ secrets.STAGING_FRONTEND_PATH }}
         run: |
           # ビルドファイルをサーバーに転送
-          rsync -avz --delete \
+          rsync -avz --delete -e "ssh -p 10022 -o ConnectTimeout=30 -o StrictHostKeyChecking=no" \
             todo-app/frontend/todo/build/ \
             $STAGING_USER@$STAGING_HOST:$STAGING_PATH/
 
