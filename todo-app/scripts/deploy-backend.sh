@@ -22,8 +22,8 @@ $PHP_CMD artisan down --retry=60 || true
 # 最新コードを取得
 git fetch origin
 git reset --hard origin/staging
-
 cd ../backend
+
 # 依存関係をインストール
 composer install --no-dev --optimize-autoloader --no-interaction
 
