@@ -4,6 +4,7 @@ set -e
 echo "デプロイ開始..."
 
 PHP_CMD="php8.3"
+cd ../backend
 
 # メンテナンスモード
 $PHP_CMD artisan down --retry=60 || true
@@ -11,7 +12,6 @@ $PHP_CMD artisan down --retry=60 || true
 # 最新コードを取得
 git fetch origin
 git reset --hard origin/staging
-cd ../backend
 
 # 依存関係をインストール（PHP 8.3を使用）
 $PHP_CMD composer install --no-dev --optimize-autoloader --no-interaction
