@@ -110,12 +110,13 @@ jobs:
         env:
           STAGING_HOST: ${{ secrets.STAGING_HOST }}
           STAGING_USER: ${{ secrets.STAGING_USER }}
-          STAGING_PATH: ${{ secrets.STAGING_FRONTEND_PATH }}
+          STAGING_FRONTEND_PATH: ${{ secrets.STAGING_FRONTEND_PATH }}
+          STAGING_PATH: ${{ secrets.STAGING_PUBLIC_PATH }}
           STAGING_PORT: ${{ secrets.STAGING_PORT }}
         run: |
           # ビルドファイルをサーバーに転送
           rsync -avz --delete -e "ssh -p $STAGING_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no" \
-            todo-app/frontend/todo/build/ \
+            $STAGING_FRONTEND_PATH \
             $STAGING_USER@$STAGING_HOST:$STAGING_PATH/
 
       # デプロイ通知（オプション）
