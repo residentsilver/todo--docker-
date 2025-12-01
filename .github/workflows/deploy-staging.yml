@@ -55,8 +55,20 @@ jobs:
           STAGING_USER: ${{ secrets.STAGING_USER }}
           STAGING_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
         run: |
-          # デプロイスクリプトの実行
-          ssh -p 10022 -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && bash deploy_backend.sh"
+          # デプロイスクリプトの存在確認と実行
+          ssh -p 10022 -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "
+            cd $STAGING_PATH && 
+            ls -la deploy.sh deploy_backend.sh 2>/dev/null || echo 'Checking for deploy script...' &&
+            if [ -f deploy.sh ]; then
+              bash deploy.sh
+            elif [ -f deploy_backend.sh ]; then
+              bash deploy_backend.sh
+            else
+              echo 'Error: deploy.sh or deploy_backend.sh not found in $STAGING_PATH'
+              ls -la
+              exit 1
+            fi
+          "
 
       # デプロイ通知（オプション）
       - name: Notify deployment
