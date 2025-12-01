@@ -50,10 +50,10 @@ jobs:
           STAGING_USER: ${{ secrets.STAGING_USER }}
           STAGING_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
           STAGING_PORT: ${{ secrets.STAGING_PORT }}
-          # STAGING_BACKEND_SCRIPT_PATH: ${{ secrets.STAGING_BACKEND_SCRIPT_PATH }}
+          STAGING_BACKEND_SCRIPT_PATH: ${{ secrets.STAGING_BACKEND_PATH }}
         run: |
           # デプロイスクリプトの実行
-          ssh -p $STAGING_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd $STAGING_PATH && ./deploy-backend.sh"
+          ssh -p $STAGING_PORT -o ConnectTimeout=30 -o StrictHostKeyChecking=no $STAGING_USER@$STAGING_HOST "cd $STAGING_BACKEND_SCRIPT_PATH && bash deploy-backend.sh"
 
       # デプロイ通知（オプション）
       - name: Notify deployment
