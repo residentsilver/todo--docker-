@@ -88,6 +88,7 @@ jobs:
         env:
           REACT_APP_API_URL: ${{ secrets.STAGING_API_URL }}
           REACT_APP_ENV: staging
+          CI: false
         run: npm run build
 
       # SSHキーのセットアップ
