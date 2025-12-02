@@ -18,9 +18,26 @@ const LineCallback = () => {
         const code = searchParams.get('code');
         const state = searchParams.get('state');
         const error = searchParams.get('error');
+        const errorDescription = searchParams.get('error_description');
 
+        // LINE認証エラーの処理
         if (error) {
-          throw new Error(`LINE認証エラー: ${error}`);
+          let errorMessage = 'LINE認証に失敗しました';
+          
+          // 開発者モードエラーの場合
+          if (error === 'access_denied' || errorDescription?.includes('developing status') || errorDescription?.includes('developer role')) {
+            errorMessage = 'LINEチャネルが開発者モードのため、開発者ロールを持つユーザーのみ認証できます。\n\n' +
+                          '解決方法：\n' +
+                          '1. LINE Developers Consoleにアクセス\n' +
+                          '2. チャネル設定で「公開」状態に変更する\n' +
+                          '3. または、開発者ロールを持つLINEアカウントで認証する';
+          } else if (errorDescription) {
+            errorMessage = `LINE認証エラー: ${errorDescription}`;
+          } else {
+            errorMessage = `LINE認証エラー: ${error}`;
+          }
+          
+          throw new Error(errorMessage);
         }
 
         if (!code || !state) {
@@ -36,6 +53,16 @@ const LineCallback = () => {
           setStatus('success');
           setMessage('LINE連携が完了しました！');
           
+          // localStorageに完了状態を保存（QRコード認証時の元ブラウザへの通知用）
+          try {
+            localStorage.setItem(`line_connection_state_${state}`, 'completed');
+            // 同じタブでもstorageイベントを発火させるため、一度削除して再設定
+            localStorage.removeItem(`line_connection_state_${state}`);
+            localStorage.setItem(`line_connection_state_${state}`, 'completed');
+          } catch (e) {
+            console.warn('localStorageへの保存に失敗しました:', e);
+          }
+          
           // 3秒後に設定ページにリダイレクト
           setTimeout(() => {
             navigate('/remind/settings');
@@ -47,12 +74,28 @@ const LineCallback = () => {
       } catch (error) {
         console.error('LINE連携エラー:', error);
         setStatus('error');
-        setMessage(error.message || 'LINE連携に失敗しました');
         
-        // 5秒後に設定ページにリダイレクト
+        // エラーメッセージを整形（改行を適切に処理）
+        const errorMessage = error.message || 'LINE連携に失敗しました';
+        setMessage(errorMessage);
+        
+        // エラー時もlocalStorageにエラー状態を保存
+        const state = searchParams.get('state');
+        if (state) {
+          try {
+            localStorage.setItem(`line_connection_state_${state}`, 'error');
+          } catch (e) {
+            console.warn('localStorageへの保存に失敗しました:', e);
+          }
+        }
+        
+        // 開発者モードエラーの場合はリダイレクト時間を長めに設定
+        const isDeveloperModeError = errorMessage.includes('開発者モード') || errorMessage.includes('developer role');
+        const redirectDelay = isDeveloperModeError ? 10000 : 5000;
+        
         setTimeout(() => {
           navigate('/remind/settings');
-        }, 5000);
+        }, redirectDelay);
       }
     };
 
@@ -100,16 +143,16 @@ const LineCallback = () => {
 
       {status === 'error' && (
         <>
-          <Alert severity="error" sx={{ mb: 3, minWidth: 300 }}>
+          <Alert severity="error" sx={{ mb: 3, minWidth: 400, maxWidth: 600 }}>
             <Typography variant="h6" gutterBottom>
-              ❌ LINE連携失敗
+              LINE連携失敗
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line' }}>
               {message}
             </Typography>
           </Alert>
           <Typography variant="body2" color="text.secondary">
-            5秒後に設定ページに戻ります...
+            {message.includes('開発者モード') ? '10秒後' : '5秒後'}に設定ページに戻ります...
           </Typography>
         </>
       )}

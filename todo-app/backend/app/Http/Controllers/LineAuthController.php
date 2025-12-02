@@ -103,11 +103,25 @@ class LineAuthController extends Controller
             
             if (!$tokenResponse->successful()) {
                 $errorBody = $tokenResponse->body();
+                $errorData = $tokenResponse->json();
+                
                 \Log::error('LINE token request failed', [
                     'status' => $tokenResponse->status(),
-                    'body' => $errorBody
+                    'body' => $errorBody,
+                    'error_data' => $errorData
                 ]);
-                throw new \Exception("トークン取得に失敗しました: {$errorBody}");
+                
+                // 開発者モードエラーの場合、より分かりやすいメッセージを返す
+                $errorMessage = $errorData['error_description'] ?? $errorBody;
+                if (strpos($errorMessage, 'developing status') !== false || 
+                    strpos($errorMessage, 'developer role') !== false) {
+                    throw new \Exception(
+                        'LINEチャネルが開発者モードのため、開発者ロールを持つユーザーのみ認証できます。' .
+                        'LINE Developers Consoleでチャネルを「公開」状態に変更してください。'
+                    );
+                }
+                
+                throw new \Exception("トークン取得に失敗しました: {$errorMessage}");
             }
             
             $tokenData = $tokenResponse->json();
@@ -138,49 +152,111 @@ class LineAuthController extends Controller
                 'user_name' => $user->name
             ]);
             
-            // 既存のアクティブなトークンを無効化
+            // トランザクション内でトークンを保存
             try {
-                $deactivatedCount = $user->lineTokens()->update(['is_active' => false]);
-                \Log::info('Deactivated existing tokens', ['count' => $deactivatedCount]);
-            } catch (\Exception $e) {
-                \Log::error('Failed to deactivate existing tokens', [
-                    'error' => $e->getMessage(),
-                    'user_id' => $user->id
-                ]);
-                // 既存トークンの無効化に失敗しても処理は続行
-            }
-            
-            // 新しいLINEトークンを保存
-            try {
+                \DB::beginTransaction();
+                
                 \Log::info('Attempting to save LINE token', [
                     'user_id' => $user->id,
                     'line_user_id' => $profile['userId'],
                     'line_display_name' => $profile['displayName']
                 ]);
                 
-                // 一度モデルを直接作成してみる
-                $lineToken = new LineToken();
-                $lineToken->user_id = $user->id;
-                $lineToken->line_user_id = $profile['userId'];
-                $lineToken->access_token = $tokenData['access_token'];
-                $lineToken->refresh_token = $tokenData['refresh_token'] ?? null;
-                $lineToken->token_expires_at = isset($tokenData['expires_in']) 
-                    ? now()->addSeconds($tokenData['expires_in']) 
-                    : null;
-                $lineToken->line_display_name = $profile['displayName'];
-                $lineToken->line_picture_url = $profile['pictureUrl'] ?? null;
-                $lineToken->scope = explode(' ', $tokenData['scope'] ?? '');
-                $lineToken->is_active = true;
-                $lineToken->linked_at = now();
+                // 既存の同じline_user_idのトークンを確認
+                $existingToken = LineToken::where('line_user_id', $profile['userId'])->first();
                 
-                $lineToken->save();
+                if ($existingToken) {
+                    \Log::info('Existing LINE token found', [
+                        'line_token_id' => $existingToken->id,
+                        'user_id' => $existingToken->user_id,
+                        'is_active' => $existingToken->is_active
+                    ]);
+                    
+                    // 既存のトークンが別のユーザーに紐づいている場合はエラー
+                    if ($existingToken->user_id !== $user->id) {
+                        \DB::rollBack();
+                        throw new \Exception('このLINEアカウントは既に別のユーザーに紐づいています');
+                    }
+                    
+                    // 既存のトークンを更新
+                    $existingToken->access_token = $tokenData['access_token'];
+                    $existingToken->refresh_token = $tokenData['refresh_token'] ?? null;
+                    $existingToken->token_expires_at = isset($tokenData['expires_in']) 
+                        ? now()->addSeconds($tokenData['expires_in']) 
+                        : null;
+                    $existingToken->line_display_name = $profile['displayName'];
+                    $existingToken->line_picture_url = $profile['pictureUrl'] ?? null;
+                    $existingToken->scope = explode(' ', $tokenData['scope'] ?? '');
+                    $existingToken->is_active = true;
+                    $existingToken->linked_at = now();
+                    $existingToken->last_used_at = null;
+                    
+                    $existingToken->save();
+                    $lineToken = $existingToken;
+                    
+                    \Log::info('LINE token updated successfully', [
+                        'line_token_id' => $lineToken->id,
+                        'user_id' => $user->id
+                    ]);
+                } else {
+                    // 既存のアクティブなトークンを無効化（同じユーザーの他のトークン）
+                    try {
+                        $deactivatedCount = $user->lineTokens()
+                            ->where('is_active', true)
+                            ->update(['is_active' => false]);
+                        \Log::info('Deactivated existing tokens', ['count' => $deactivatedCount]);
+                    } catch (\Exception $e) {
+                        \Log::warning('Failed to deactivate existing tokens', [
+                            'error' => $e->getMessage(),
+                            'user_id' => $user->id
+                        ]);
+                        // 既存トークンの無効化に失敗しても処理は続行
+                    }
+                    
+                    // 新しいLINEトークンを作成
+                    $lineToken = new LineToken();
+                    $lineToken->user_id = $user->id;
+                    $lineToken->line_user_id = $profile['userId'];
+                    $lineToken->access_token = $tokenData['access_token'];
+                    $lineToken->refresh_token = $tokenData['refresh_token'] ?? null;
+                    $lineToken->token_expires_at = isset($tokenData['expires_in']) 
+                        ? now()->addSeconds($tokenData['expires_in']) 
+                        : null;
+                    $lineToken->line_display_name = $profile['displayName'];
+                    $lineToken->line_picture_url = $profile['pictureUrl'] ?? null;
+                    $lineToken->scope = explode(' ', $tokenData['scope'] ?? '');
+                    $lineToken->is_active = true;
+                    $lineToken->linked_at = now();
+                    
+                    $lineToken->save();
+                    
+                    \Log::info('LINE token created successfully', [
+                        'line_token_id' => $lineToken->id,
+                        'user_id' => $user->id
+                    ]);
+                }
                 
-                \Log::info('LINE token saved successfully', [
-                    'line_token_id' => $lineToken->id,
-                    'user_id' => $user->id
+                \DB::commit();
+                
+            } catch (\Illuminate\Database\QueryException $e) {
+                \DB::rollBack();
+                \Log::error('Database error while saving LINE token', [
+                    'error' => $e->getMessage(),
+                    'error_code' => $e->getCode(),
+                    'error_info' => $e->errorInfo ?? null,
+                    'trace' => $e->getTraceAsString(),
+                    'user_id' => $user->id,
+                    'line_user_id' => $profile['userId'] ?? null
                 ]);
                 
+                // ユニーク制約違反の場合
+                if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062) {
+                    throw new \Exception('このLINEアカウントは既に登録されています');
+                }
+                
+                throw new \Exception('LINE情報の保存に失敗しました: ' . $e->getMessage());
             } catch (\Exception $e) {
+                \DB::rollBack();
                 \Log::error('Failed to save LINE token', [
                     'error' => $e->getMessage(),
                     'trace' => $e->getTraceAsString(),
