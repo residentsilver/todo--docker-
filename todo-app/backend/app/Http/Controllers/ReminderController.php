@@ -578,6 +578,7 @@ class ReminderController extends Controller
 
     /**
      * リマインド履歴を作成
+     * 終了日からリマインド日数を差し引いた日付に、通知時間を設定してscheduled_atを計算
      * 
      * @param Subscription $subscription
      * @return void
@@ -588,13 +589,35 @@ class ReminderController extends Controller
             return;
         }
 
-        foreach ($subscription->reminder_days as $daysBefore) {
-            $scheduledAt = Carbon::parse($subscription->end_date)
-                ->subDays($daysBefore)
-                ->setTimeFromTimeString($subscription->reminder_time ?? '09:00:00');
+        // サブスクリプションのタイムゾーンを取得（デフォルトはAsia/Tokyo）
+        $timezone = $subscription->timezone ?? 'Asia/Tokyo';
+        
+        // 通知時間を取得（デフォルトは09:00:00）
+        $reminderTime = $subscription->reminder_time ?? '09:00:00';
+        
+        // 時刻文字列をフォーマット（H:i:s形式に変換）
+        if (is_string($reminderTime) && preg_match('/^(\d{2}):(\d{2})(?::(\d{2}))?$/', $reminderTime, $matches)) {
+            $timeString = sprintf('%02d:%02d:%02d', $matches[1], $matches[2], $matches[3] ?? 0);
+        } else {
+            // Carbonオブジェクトの場合は時刻を取得
+            $timeString = Carbon::parse($reminderTime)->format('H:i:s');
+        }
 
+        foreach ($subscription->reminder_days as $daysBefore) {
+            // 終了日をタイムゾーンを考慮して取得
+            $endDate = Carbon::parse($subscription->end_date)->setTimezone($timezone);
+            
+            // 終了日からリマインド日数を差し引いた日付を計算
+            $scheduledDate = $endDate->copy()->subDays($daysBefore);
+            
+            // 通知時間を設定
+            $scheduledAt = $scheduledDate->copy()->setTimeFromTimeString($timeString);
+            
+            // 現在時刻をタイムゾーンを考慮して取得
+            $now = Carbon::now($timezone);
+            
             // 過去の日付の場合はスキップ
-            if ($scheduledAt < Carbon::now()) {
+            if ($scheduledAt < $now) {
                 continue;
             }
 

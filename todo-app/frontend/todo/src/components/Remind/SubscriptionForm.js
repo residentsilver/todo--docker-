@@ -40,6 +40,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { ja } from 'date-fns/locale';
+import { format } from 'date-fns';
 import { useMutation, useQueryClient } from 'react-query';
 import apiClient from '../../api/axios';
 
@@ -312,10 +313,11 @@ const SubscriptionForm = ({ open, subscription, onClose, onSuccess }) => {
     }
 
     // データを整形
+    // 日付はローカルタイムゾーンでフォーマット（UTC変換による1日ずれを防ぐ）
     const submitData = {
       ...formData,
-      start_date: formData.start_date.toISOString().split('T')[0],
-      end_date: formData.end_date.toISOString().split('T')[0],
+      start_date: format(formData.start_date, 'yyyy-MM-dd'),
+      end_date: format(formData.end_date, 'yyyy-MM-dd'),
       amount: parseFloat(formData.amount)
     };
 
