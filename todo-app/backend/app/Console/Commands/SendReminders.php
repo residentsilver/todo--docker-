@@ -158,98 +158,65 @@ class SendReminders extends Command
 
         try {
             $now = Carbon::now();
+            $currentDate = $now->format('Y-m-d');
             $currentTime = $now->format('H:i');
 
-            // 条件に一致するサブスクリプションを取得
-            $subscriptions = Subscription::with(['user.activeLineToken'])
-                ->where('notification_enabled', true)
-                ->where('status', 'active')
-                ->whereNotNull('reminder_days')
-                ->whereNotNull('reminder_time')
+            // reminder_historiesテーブルから、現在の日時分（秒は無視）と一致するscheduled_atを持つ
+            // statusがpendingのレコードを取得
+            $pendingReminders = ReminderHistory::with(['subscription.user.activeLineToken'])
+                ->where('status', 'pending')
+                ->whereDate('scheduled_at', $currentDate)
+                ->whereRaw("DATE_FORMAT(scheduled_at, '%H:%i') = ?", [$currentTime])
                 ->get();
 
-            $this->line("チェック対象のサブスクリプション: {$subscriptions->count()}件");
+            $this->line("送信対象のリマインダー: {$pendingReminders->count()}件");
 
-            foreach ($subscriptions as $subscription) {
+            foreach ($pendingReminders as $reminder) {
                 try {
+                    $subscription = $reminder->subscription;
+                    $user = $reminder->user;
+
+                    // サブスクリプションが有効かチェック
+                    if (!$subscription || $subscription->status !== 'active' || !$subscription->notification_enabled) {
+                        $this->line("サブスクリプションID {$reminder->subscription_id} は無効または通知が無効です");
+                        continue;
+                    }
+
                     // ユーザーが有効なLINEトークンを持っているかチェック
-                    if (!$subscription->user->activeLineToken || !$subscription->user->activeLineToken->is_valid) {
-                        $this->line("ユーザーID {$subscription->user->id} の有効なLINEトークンが見つかりません");
+                    if (!$user->activeLineToken || !$user->activeLineToken->is_valid) {
+                        $this->line("ユーザーID {$user->id} の有効なLINEトークンが見つかりません");
                         continue;
                     }
 
-                    // リマインド時間の確認（現在時刻がリマインド時間と一致するかチェック）
-                    $reminderTime = Carbon::parse($subscription->reminder_time)->format('H:i');
-                    if ($currentTime !== $reminderTime) {
-                        $this->line("サブスクリプション '{$subscription->service_name}' のリマインド時間 ({$reminderTime}) と現在時刻 ({$currentTime}) が一致しません");
-                        continue;
-                    }
-
-                    // reminder_daysの各値に対してチェック
-                    $reminderDays = $subscription->reminder_days;
-                    if (!is_array($reminderDays)) {
-                        continue;
-                    }
-
-                    foreach ($reminderDays as $daysBefore) {
-                        // 指定日数前の日付を計算
-                        $targetDate = Carbon::parse($subscription->end_date)->subDays($daysBefore)->toDateString();
-                        $today = $now->toDateString();
+                    // LINEメッセージを送信
+                    try {
+                        $success = $this->lineMessagingService->sendReminderMessage($reminder);
                         
-                        // 今日の日付と一致するかチェック
-                        if ($targetDate === $today) {
-                            // 既に送信済みかチェック（ユニーク制約に合わせてuser_idも含める）
-                            $existingReminder = ReminderHistory::forSubscriptionUser(
-                                $subscription->id, 
-                                $daysBefore, 
-                                $subscription->user_id
-                            )->where('status', 'sent')->first();
-
-                            if ($existingReminder) {
-                                $this->line("サブスクリプション '{$subscription->service_name}' の {$daysBefore}日前リマインダーは既に送信済みです");
-                                continue;
-                            }
-
-                            // // リマインダー履歴を作成
-                            // $reminder = ReminderHistory::create([
-                            //     'subscription_id' => $subscription->id,
-                            //     'user_id' => $subscription->user_id,
-                            //     'days_before' => $daysBefore,
-                            //     'scheduled_at' => $now,
-                            //     'status' => 'pending',
-                            // ]);
-
-                            // LINEメッセージを送信
-                            try {
-                                $success = $this->lineMessagingService->sendReminderMessage($reminder);
-                                
-                                if ($success) {
-                                    $sent++;
-                                    $this->line("サブスクリプション '{$subscription->service_name}' のリマインダーを送信しました (残り{$daysBefore}日)");
-                                } else {
-                                    $failed++;
-                                    $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信に失敗しました");
-                                }
-                            } catch (\Exception $e) {
-                                $failed++;
-                                $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信処理でエラーが発生しました: " . $e->getMessage());
-                                
-                                Log::error('リマインダー送信処理中にエラーが発生しました', [
-                                    'subscription_id' => $subscription->id,
-                                    'reminder_history_id' => $reminder->id ?? null,
-                                    'error' => $e->getMessage(),
-                                    'trace' => $e->getTraceAsString()
-                                ]);
-                            }
+                        if ($success) {
+                            $sent++;
+                            $this->line("サブスクリプション '{$subscription->service_name}' のリマインダーを送信しました (残り{$reminder->days_before}日)");
+                        } else {
+                            $failed++;
+                            $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信に失敗しました");
                         }
+                    } catch (\Exception $e) {
+                        $failed++;
+                        $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信処理でエラーが発生しました: " . $e->getMessage());
+                        
+                        Log::error('リマインダー送信処理中にエラーが発生しました', [
+                            'subscription_id' => $subscription->id,
+                            'reminder_history_id' => $reminder->id,
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
+                        ]);
                     }
                     
                 } catch (\Exception $e) {
                     $failed++;
-                    $this->error("サブスクリプションID {$subscription->id} の処理に失敗しました: " . $e->getMessage());
+                    $this->error("リマインダー履歴ID {$reminder->id} の処理に失敗しました: " . $e->getMessage());
                     
-                    Log::error('サブスクリプションリマインダー処理中にエラーが発生しました', [
-                        'subscription_id' => $subscription->id,
+                    Log::error('リマインダー履歴処理中にエラーが発生しました', [
+                        'reminder_history_id' => $reminder->id,
                         'error' => $e->getMessage(),
                         'trace' => $e->getTraceAsString()
                     ]);
