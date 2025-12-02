@@ -334,7 +334,7 @@ const SubscriptionCard = ({ subscription, onEdit, onDelete, onTestSend }) => {
  */
 const SubscriptionList = ({ onEdit, onCreate }) => {
   const [filters, setFilters] = useState({
-    status: 'all',
+    status: 'active',
     contract_type: 'all',
     sort_by: 'end_date',
     sort_order: 'asc'
