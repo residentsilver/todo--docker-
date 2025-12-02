@@ -258,4 +258,69 @@ class TodoController extends Controller
 
         return response()->json(['message' => 'Todo順序が正常に更新されました。']);
     }
+
+    /**
+     * 認証されたユーザーの削除されたTodoアイテムを完全に削除（ハードデリート）します。
+     *
+     * @param  \App\Http\Requests\ToDo\RestoreRequest  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function forceDeleteTodo(RestoreRequest $request, $id)
+    {
+        try {
+            $todo = Todo::onlyTrashed()
+                ->where('user_id', $request->user()->id)
+                ->findOrFail($id);
+            
+            // 関連するTodoDetailも完全に削除
+            $todo->todoDetails()->withTrashed()->forceDelete();
+            
+            // Todoを完全に削除
+            $todo->forceDelete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Todoアイテムが完全に削除されました。'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Todoアイテムの完全削除に失敗しました。',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * 認証されたユーザーの削除されたTodoDetailを完全に削除（ハードデリート）します。
+     *
+     * @param  \App\Http\Requests\ToDo\RestoreRequest  $request
+     * @param  int  $todoId
+     * @param  int  $detailId
+     * @return \Illuminate\Http\Response
+     */
+    public function forceDeleteTodoDetail(RestoreRequest $request, $todoId, $detailId)
+    {
+        try {
+            $todo = Todo::where('user_id', $request->user()->id)->findOrFail($todoId);
+            $todoDetail = $todo->todoDetails()->onlyTrashed()->findOrFail($detailId);
+            
+            // TodoDetailを完全に削除
+            $todoDetail->forceDelete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Todo詳細が完全に削除されました。'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Todo詳細の完全削除に失敗しました。',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

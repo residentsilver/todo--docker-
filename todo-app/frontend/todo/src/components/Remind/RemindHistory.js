@@ -180,10 +180,10 @@ const HistoryCard = ({ history }) => {
  */
 const RemindHistory = () => {
   const [filters, setFilters] = useState({
-    status: '',
+    status: 'pending',
     subscription_id: '',
     sort_by: 'scheduled_at',
-    sort_order: 'desc'
+    sort_order: 'asc'
   });
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -326,8 +326,8 @@ const RemindHistory = () => {
                 onChange={(e) => handleFilterChange('sort_order', e.target.value)}
                 displayEmpty
               >
-                <MenuItem value="desc">降順（新しい順）</MenuItem>
-                <MenuItem value="asc">昇順（古い順）</MenuItem>
+                <MenuItem value="asc">昇順</MenuItem>
+                <MenuItem value="desc">降順</MenuItem>
               </Select>
             </FormControl>
           </Grid>

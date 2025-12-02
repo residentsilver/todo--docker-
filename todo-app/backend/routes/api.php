@@ -38,6 +38,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/todos-deleted', [TodoController::class, 'getDeletedTodos']);
     Route::post('/todos/{id}/restore', [TodoController::class, 'restoreTodo']);
     Route::post('/todos/{todoId}/details/{detailId}/restore', [TodoController::class, 'restoreTodoDetail']);
+    Route::delete('/todos/{id}/force-delete', [TodoController::class, 'forceDeleteTodo']);
+    Route::delete('/todos/{todoId}/details/{detailId}/force-delete', [TodoController::class, 'forceDeleteTodoDetail']);
 
     // LINE認証関連
     Route::prefix('line')->group(function () {
