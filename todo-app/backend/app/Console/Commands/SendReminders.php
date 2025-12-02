@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use App\Services\NotificationService;
 use App\Services\LineMessagingService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\QueryException;
 
 /**
  * リマインダー送信コマンド
@@ -209,24 +210,36 @@ class SendReminders extends Command
                                 continue;
                             }
 
-                            // リマインダー履歴を作成
-                            $reminder = ReminderHistory::create([
-                                'subscription_id' => $subscription->id,
-                                'user_id' => $subscription->user_id,
-                                'days_before' => $daysBefore,
-                                'scheduled_at' => $now,
-                                'status' => 'pending',
-                            ]);
+                            // // リマインダー履歴を作成
+                            // $reminder = ReminderHistory::create([
+                            //     'subscription_id' => $subscription->id,
+                            //     'user_id' => $subscription->user_id,
+                            //     'days_before' => $daysBefore,
+                            //     'scheduled_at' => $now,
+                            //     'status' => 'pending',
+                            // ]);
 
                             // LINEメッセージを送信
-                            $success = $this->lineMessagingService->sendReminderMessage($reminder);
-                            
-                            if ($success) {
-                                $sent++;
-                                $this->line("サブスクリプション '{$subscription->service_name}' のリマインダーを送信しました (残り{$daysBefore}日)");
-                            } else {
+                            try {
+                                $success = $this->lineMessagingService->sendReminderMessage($reminder);
+                                
+                                if ($success) {
+                                    $sent++;
+                                    $this->line("サブスクリプション '{$subscription->service_name}' のリマインダーを送信しました (残り{$daysBefore}日)");
+                                } else {
+                                    $failed++;
+                                    $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信に失敗しました");
+                                }
+                            } catch (\Exception $e) {
                                 $failed++;
-                                $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信に失敗しました");
+                                $this->error("サブスクリプション '{$subscription->service_name}' のリマインダー送信処理でエラーが発生しました: " . $e->getMessage());
+                                
+                                Log::error('リマインダー送信処理中にエラーが発生しました', [
+                                    'subscription_id' => $subscription->id,
+                                    'reminder_history_id' => $reminder->id ?? null,
+                                    'error' => $e->getMessage(),
+                                    'trace' => $e->getTraceAsString()
+                                ]);
                             }
                         }
                     }
