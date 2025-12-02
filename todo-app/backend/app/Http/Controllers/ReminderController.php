@@ -272,45 +272,14 @@ class ReminderController extends Controller
             $sortOrder = $request->get('sort_order', 'desc');
             $query->orderBy($sortBy, $sortOrder);
 
+            // ページネーション
             $perPage = $request->get('per_page', 15);
-            $page = $request->get('page', 1);
-            
-            // まず、ページネーションなしでデータを取得してテスト
-            $allData = $query->get();
-            
-            // ページネーションを適用
-            $histories = $query->paginate($perPage, ['*'], 'page', $page);
-            
+            $histories = $query->paginate($perPage);
 
-            // 一時的にページネーションを無効にして、直接データを返す
             return response()->json([
                 'status' => 'success',
-                'data' => [
-                    'data' => $allData,
-                    'total' => $allData->count(),
-                    'current_page' => 1,
-                    'per_page' => $allData->count(),
-                    'last_page' => 1,
-                    'from' => 1,
-                    'to' => $allData->count()
-                ],
-                'message' => 'リマインド履歴を取得しました',
-                'debug' => [
-                    'allData_count' => $allData->count(),
-                    'allData_first_item' => $allData->first(),
-                    'query_sql' => $query->toSql(),
-                    'query_bindings' => $query->getBindings(),
-                    'filtering_params' => [
-                        'status' => $request->get('status'),
-                        'subscription_id' => $request->get('subscription_id'),
-                        'has_status' => $request->has('status'),
-                        'has_subscription_id' => $request->has('subscription_id'),
-                        'status_empty' => $request->get('status') === '',
-                        'subscription_id_empty' => $request->get('subscription_id') === ''
-                    ],
-                    'user_id' => $user->id,
-                    'request_all' => $request->all()
-                ]
+                'data' => $histories,
+                'message' => 'リマインド履歴を取得しました'
             ]);
 
         } catch (\Exception $e) {
